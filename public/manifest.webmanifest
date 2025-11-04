@@ -1,6 +1,6 @@
 {
-  "name": "発注スキャン集計 - 区切り職人1.5",
-  "short_name": "発注スキャン",
+  "name": "スキャ楽（スキャラク）- 発注書スキャン集計",
+  "short_name": "スキャ楽",
   "description": "発注書をスキャンしてOCR処理し、品目別に集計してGoogleスプレッドシートに保存",
   "start_url": "/",
   "display": "standalone",

@@ -1,5 +1,5 @@
 // PM2 Ecosystem Configuration
-// 発注スキャン集計アプリケーション
+// スキャ楽（スキャラク）- 発注書スキャン集計アプリケーション
 
 module.exports = {
   apps: [

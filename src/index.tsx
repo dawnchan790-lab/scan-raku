@@ -103,14 +103,14 @@ app.get('/', (c) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="発注書をスキャンしてOCR処理し、品目別に集計してGoogleスプレッドシートに保存します">
-    <title>発注スキャン集計 - 区切り職人1.5</title>
+    <title>スキャ楽（スキャラク）- 発注書スキャン集計</title>
     
     <!-- PWA設定 -->
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#4F46E5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="発注スキャン">
+    <meta name="apple-mobile-web-app-title" content="スキャ楽">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     
     <!-- スタイル -->
@@ -124,9 +124,9 @@ app.get('/', (c) => {
         <header class="mb-6">
             <h1 class="text-3xl font-bold text-indigo-600 mb-2">
                 <i class="fas fa-clipboard-check mr-2"></i>
-                発注スキャン集計
+                スキャ楽（スキャラク）
             </h1>
-            <p class="text-gray-600">区切り職人1.5モジュール - MVP版</p>
+            <p class="text-gray-600">発注書スキャン集計アプリ - MVP版</p>
         </header>
 
         <!-- メインコンテンツ -->
@@ -267,7 +267,7 @@ app.get('/', (c) => {
 
         <!-- フッター -->
         <footer class="mt-8 text-center text-gray-500 text-sm">
-            <p>発注スキャン集計 - 区切り職人1.5モジュール (MVP版)</p>
+            <p>スキャ楽（スキャラク）- 発注書スキャン集計 (MVP版)</p>
             <p class="mt-1">OCRエンジン: Tesseract.js (日本語対応)</p>
         </footer>
     </div>

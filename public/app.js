@@ -1,9 +1,9 @@
-// 発注スキャン集計アプリケーション - メインスクリプト
+// スキャ楽（スキャラク）- 発注書スキャン集計アプリケーション
 
 // グローバル定数
 const GAS_URL_KEY = 'gas_url';
 const APP_TOKEN_KEY = 'app_token';
-const DB_NAME = 'OrderScanDB';
+const DB_NAME = 'ScanRakuDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'pendingOrders';
 

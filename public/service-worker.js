@@ -1,8 +1,8 @@
-// 発注スキャン集計 - Service Worker
+// スキャ楽（スキャラク）- Service Worker
 // オフライン対応とキャッシュ管理
 
-const CACHE_NAME = 'order-scan-v1';
-const RUNTIME_CACHE = 'order-scan-runtime';
+const CACHE_NAME = 'scan-raku-v1';
+const RUNTIME_CACHE = 'scan-raku-runtime';
 
 // キャッシュするリソース
 const STATIC_RESOURCES = [
@@ -175,7 +175,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification('発注スキャン集計', options)
+    self.registration.showNotification('スキャ楽', options)
   );
 });
 

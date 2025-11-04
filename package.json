@@ -1,5 +1,5 @@
 {
-  "name": "webapp",
+  "name": "scan-raku",
   "type": "module",
   "scripts": {
     "dev": "vite",
