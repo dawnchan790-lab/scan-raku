@@ -517,13 +517,16 @@ async function saveToGAS() {
                 'X-APP-TOKEN': appToken || ''
             },
             body: JSON.stringify(payload),
-            mode: 'no-cors' // GASの制約
+            mode: 'no-cors' // GASの制約（CORS設定ができないため）
         });
         
         // no-corsモードのため、responseは取得できない
-        // 成功と仮定して表示
+        // GAS側では正常に {ok: true, sheetUrl, pdfUrl} を返しているが、
+        // ブラウザのセキュリティ制約により読み取れない
+        // 成功と仮定して表示（実際のURLは推測）
         displaySaveSuccess({
             success: true,
+            ok: true,
             sheetUrl: gasUrl.replace('/exec', '/edit'),
             pdfUrl: gasUrl.replace('/exec', '/export?format=pdf')
         });
@@ -552,6 +555,9 @@ function calculateTotals() {
 function displaySaveSuccess(response) {
     const resultDiv = document.getElementById('saveResult');
     
+    // response.ok または response.success で成功判定
+    const isSuccess = response.ok || response.success;
+    
     let html = '<div class="bg-green-50 border border-green-200 rounded p-4">';
     html += '<p class="text-green-800 font-semibold mb-2"><i class="fas fa-check-circle mr-2"></i>保存しました！</p>';
     
@@ -560,11 +566,15 @@ function displaySaveSuccess(response) {
         html += '<i class="fas fa-table mr-2"></i>スプレッドシートを開く</a></p>';
     }
     
-    if (response.pdfUrl) {
+    if (response.pdfUrl && response.pdfUrl.length > 0) {
         html += `<p class="mb-2"><a href="${response.pdfUrl}" target="_blank" class="text-blue-600 hover:underline">`;
         html += '<i class="fas fa-file-pdf mr-2"></i>A4印刷用PDFを開く</a></p>';
         html += '<p class="text-sm text-gray-600 mt-2">';
         html += '<i class="fas fa-info-circle mr-1"></i>iPhoneの場合: 共有ボタン → プリント でA4印刷できます';
+        html += '</p>';
+    } else {
+        html += '<p class="text-sm text-gray-600 mt-2">';
+        html += '<i class="fas fa-info-circle mr-1"></i>PDF出力には「A4_印刷」シートを作成してください';
         html += '</p>';
     }
     

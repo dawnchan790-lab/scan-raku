@@ -93,9 +93,9 @@
 
 - ❌ Google Cloud Vision API の有効化（APIキー設定が必要）
 - ❌ 台形補正（現在は未実装）
-- ❌ GAS側のスプレッドシート/PDF生成スクリプト
 - ❌ エラー詳細ログ
 - ❌ ユーザー認証機能
+- ❌ CORS対応したGAS呼び出し（現在はno-corsモード）
 
 ## 🛠️ データアーキテクチャ
 
@@ -149,65 +149,89 @@ curl http://localhost:3000
 
 #### Google Apps Script の設定
 
-1. Google スプレッドシートを作成
-2. `拡張機能` → `Apps Script` を開く
-3. 以下のスクリプトを作成（サンプル）:
+1. **Googleスプレッドシートを作成**
+   - 新しいスプレッドシートを作成
+   - シート名を「明細」に変更（または自動作成されます）
+   - （オプション）「A4_印刷」シートを作成してPDF出力用のレイアウトを設定
+
+2. **Apps Scriptを開く**
+   - `拡張機能` → `Apps Script` を開く
+
+3. **以下のスクリプトをコピー＆ペースト:**
 
 ```javascript
 function doPost(e) {
-  try {
-    // トークン検証
-    const token = e.parameter.headers['X-APP-TOKEN'] || '';
-    if (token !== 'YOUR_SECRET_TOKEN') {
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: 'Invalid token'
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    // データ受信
-    const data = JSON.parse(e.postData.contents);
-    
-    // スプレッドシートへ書き込み
-    const ss = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID');
-    const sheet = ss.getSheetByName('発注データ') || ss.insertSheet('発注データ');
-    
-    // ヘッダー行がなければ追加
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['発注日', '品目', '数量', '単位', '備考', '処理日時']);
-    }
-    
-    // データ追加
-    data.lines.forEach(line => {
-      sheet.appendRow([
-        data.order_date,
-        line.item,
-        line.qty,
-        line.unit || '',
-        line.note || '',
-        new Date().toLocaleString('ja-JP')
-      ]);
-    });
-    
-    // レスポンス
-    return ContentService.createTextOutput(JSON.stringify({
-      success: true,
-      sheetUrl: ss.getUrl(),
-      pdfUrl: ss.getUrl() + '/export?format=pdf&gridlines=false'
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      error: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+  const body = JSON.parse(e.postData.contents || '{}');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('明細') || ss.insertSheet('明細');
+  
+  // ヘッダー行の作成（初回のみ）
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['ID','取込日時','発注日','品目','数量','単位','備考','画像名','OCR信頼度','ソース']);
   }
+  
+  // データの整形と追加
+  const now = new Date();
+  const orderDate = body.order_date ? new Date(body.order_date) : now;
+  const rows = (body.lines || []).map(l => ([
+    Utilities.getUuid(),                          // 一意のID
+    now,                                          // 取込日時
+    orderDate,                                    // 発注日
+    (l.item||'').toString(),                      // 品目
+    Number(l.qty||0),                             // 数量
+    (l.unit||'').toString(),                      // 単位
+    (l.note||'').toString(),                      // 備考
+    (body.source?.image_name||'').toString(),     // 画像名
+    Number(body.source?.confidence||0),           // OCR信頼度
+    (body.source?.ocr_engine||'').toString()      // OCRソース
+  ]));
+  
+  // 一括書き込み
+  if (rows.length) {
+    sheet.getRange(sheet.getLastRow()+1, 1, rows.length, rows[0].length).setValues(rows);
+  }
+  
+  // A4印刷用PDFのURL生成
+  const printSheet = ss.getSheetByName('A4_印刷');
+  let pdfUrl = '';
+  if (printSheet) {
+    const exportUrl = ss.getUrl().replace(/edit$/, '') +
+      'export?format=pdf&portrait=true&size=A4&sheetnames=false&printtitle=false&gridlines=false&fzr=false' +
+      '&gid=' + printSheet.getSheetId();
+    pdfUrl = exportUrl;
+  }
+  
+  // レスポンス返却
+  return ContentService.createTextOutput(JSON.stringify({
+    ok: true,
+    sheetUrl: ss.getUrl(),
+    pdfUrl: pdfUrl
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 ```
 
-4. `デプロイ` → `新しいデプロイ` → `ウェブアプリ`
-5. アクセス権限: `全員`
-6. デプロイURLをコピー
+4. **デプロイ設定**
+   - `デプロイ` → `新しいデプロイ` をクリック
+   - 種類: `ウェブアプリ` を選択
+   - 説明: 「発注スキャン集計API」など
+   - 次のユーザーとして実行: `自分`
+   - アクセスできるユーザー: `全員`（認証不要にする）
+   - `デプロイ` をクリック
+
+5. **デプロイURLをコピー**
+   - 表示されるウェブアプリURL（`https://script.google.com/macros/s/.../exec`）をコピー
+   - このURLをアプリの設定画面に貼り付けます
+
+### スプレッドシートの構造
+
+**「明細」シート:**
+| ID | 取込日時 | 発注日 | 品目 | 数量 | 単位 | 備考 | 画像名 | OCR信頼度 | ソース |
+|----|---------|-------|------|------|------|------|--------|-----------|--------|
+| UUID | 2025-11-04... | 2025-11-03 | きゅうり | 12 | 袋 | | IMG_0001.jpg | 0.85 | tesseract |
+
+**「A4_印刷」シート（オプション）:**
+- このシートを作成すると、PDF出力用のフォーマットを自由にカスタマイズできます
+- 例: ピボットテーブルで品目別集計を表示、ヘッダー/フッター追加など
 
 ### 2. アプリの使用方法
 
