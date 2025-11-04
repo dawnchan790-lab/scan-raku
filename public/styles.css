@@ -1,0 +1,193 @@
+/* 発注スキャン集計アプリ - カスタムスタイル */
+
+/* スムーズスクロール */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ドラッグ&ドロップエリアのアニメーション */
+#dropArea {
+    transition: all 0.3s ease;
+}
+
+#dropArea:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* プレビュー画像のスタイル */
+#previewImage {
+    max-height: 400px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+}
+
+/* テーブルのスタイル調整 */
+table input {
+    font-size: 14px;
+}
+
+table input[type="number"] {
+    text-align: center;
+}
+
+/* ボタンのホバー効果 */
+button {
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* プログレスバーのアニメーション */
+#progressBar {
+    transition: width 0.3s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    table {
+        font-size: 12px;
+    }
+    
+    table input {
+        font-size: 12px;
+        padding: 4px;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+}
+
+/* PWAインストールプロンプト用 */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-width: 90%;
+}
+
+/* ローディングスピナー */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 成功/エラーメッセージのフェードイン */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* カード影の強調 */
+.shadow-md:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+}
+
+/* 印刷用スタイル */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    table {
+        page-break-inside: avoid;
+    }
+}
+
+/* iOS Safari対応 */
+input, textarea, button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* ファイル入力のカスタムスタイル */
+input[type="file"] {
+    display: none;
+}
+
+/* フォーカススタイル */
+input:focus, textarea:focus, select:focus {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+/* テーブルの行ホバー効果 */
+tbody tr:hover {
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+/* スクロールバーのカスタマイズ（Webkit） */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* アクセシビリティ: スクリーンリーダー用の隠しテキスト */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
