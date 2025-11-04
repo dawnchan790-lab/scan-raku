@@ -18,7 +18,7 @@
 
 - **開発環境**: https://3000-ijw78ylivqr6nw947gbjz-ad490db5.sandbox.novita.ai
 - **APIヘルスチェック**: https://3000-ijw78ylivqr6nw947gbjz-ad490db5.sandbox.novita.ai/api/health
-- **GitHub**: （未設定）
+- **GitHub**: https://github.com/dawnchan790-lab/scan-raku
 - **本番環境**: （未デプロイ）
 
 ## ✨ 完成済み機能
