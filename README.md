@@ -91,11 +91,87 @@
 
 ## 🚧 未実装機能
 
-- ❌ Google Cloud Vision API の有効化（APIキー設定が必要）
+- ⚙️ Google Cloud Vision API の有効化（APIキー設定で有効化可能）
 - ❌ 台形補正（現在は未実装）
 - ❌ エラー詳細ログ
 - ❌ ユーザー認証機能
 - ❌ CORS対応したGAS呼び出し（現在はno-corsモード）
+
+## 🤖 Google Cloud Vision API の設定（OCR精度向上）
+
+### OCR精度の比較
+
+| 項目 | Tesseract.js（現在） | Google Cloud Vision API |
+|------|---------------------|------------------------|
+| 精度 | 60-70% | **95%以上** |
+| 手書き対応 | ❌ 弱い | ✅ 強い |
+| 複雑なレイアウト | ❌ 苦手 | ✅ 得意 |
+| 処理速度 | 10-30秒 | **2-5秒** |
+| コスト | 無料 | 月1,000リクエストまで無料 |
+
+### セットアップ手順
+
+#### 1. Google Cloud Console でAPIキーを取得
+
+1. **Google Cloud Consoleにアクセス**
+   - https://console.cloud.google.com/
+
+2. **新しいプロジェクトを作成**
+   - プロジェクト名: `scan-raku-ocr`
+
+3. **Cloud Vision APIを有効化**
+   - 検索: "Vision API" → 「有効にする」
+
+4. **APIキーを作成**
+   - 「APIとサービス」→「認証情報」
+   - 「認証情報を作成」→「APIキー」
+   - キーを制限: Cloud Vision API のみ許可
+
+#### 2. 開発環境に設定
+
+`.dev.vars` ファイルを作成（既に存在する場合は編集）：
+
+```bash
+# /home/user/webapp/.dev.vars
+GOOGLE_CLOUD_VISION_API_KEY=your-api-key-here
+```
+
+**注意**: `.dev.vars` は `.gitignore` に含まれているため、GitHubにはプッシュされません。
+
+#### 3. サービスを再起動
+
+```bash
+cd /home/user/webapp
+pm2 restart webapp
+```
+
+#### 4. 動作確認
+
+- アプリで画像をアップロード
+- OCR処理を実行
+- フッターに「OCRエンジン: Google Cloud Vision API」と表示されればOK
+- Tesseract.jsより高精度で高速になります
+
+#### 5. 本番環境（Cloudflare Pages）に設定
+
+```bash
+# Cloudflare Pagesにシークレットを設定
+npx wrangler pages secret put GOOGLE_CLOUD_VISION_API_KEY --project-name webapp
+# プロンプトでAPIキーを入力
+```
+
+### 料金について
+
+- **月1,000リクエストまで無料**
+- 1,001リクエスト以降: 1,000リクエストあたり$1.50
+- 個人利用や小規模利用なら無料枠で十分です
+
+### トラブルシューティング
+
+**「Google Cloud Vision APIが設定されていません」エラー:**
+- `.dev.vars` ファイルにAPIキーが正しく設定されているか確認
+- サービスを再起動したか確認
+- APIキーが有効で、Cloud Vision APIが有効化されているか確認
 
 ## 🛠️ データアーキテクチャ
 
