@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAXから納品数量を入れる</title>
+<style>
+  :root { --line:#d8dee6; --bg:#f6f8fa; --accent:#0b7285; --hit:#eaf6f8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#1b1f23;
+         font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif; }
+  header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line);
+           padding:12px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+  h1 { font-size:16px; margin:0 8px 0 0; white-space:nowrap; }
+  label { display:block; font-size:12px; color:#57606a; margin-bottom:3px; }
+  select, input[type=date], input[type=file] { font:inherit; padding:6px 8px;
+           border:1px solid var(--line); border-radius:6px; background:#fff; }
+  a.link { font-size:13px; color:var(--accent); }
+  main { padding:14px 16px 130px; }
+  .note { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+          font-size:13px; color:#57606a; margin-bottom:14px; line-height:1.7; }
+  .headerimg { max-width:100%; border:1px solid var(--line); border-radius:6px; background:#fff;
+               margin-bottom:14px; }
+  table { border-collapse:collapse; width:100%; background:#fff; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:5px 8px; vertical-align:middle; }
+  th { background:#eef2f6; font-size:12px; color:#57606a; position:sticky; top:60px; }
+  tr.marked { background:var(--hit); }
+  img.strip { display:block; height:34px; image-rendering:crisp-edges; }
+  input.qty { width:70px; font:inherit; text-align:right; padding:5px 7px;
+              border:1px solid var(--line); border-radius:6px; }
+  input.qty:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  select.item { font:inherit; max-width:230px; padding:4px 6px;
+                border:1px solid var(--line); border-radius:6px; }
+  footer { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line);
+           padding:12px 16px; display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  .total { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .sub { font-size:12px; color:#57606a; }
+  button { font:inherit; font-weight:700; padding:9px 20px; border-radius:8px; border:none;
+           background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { background:#9db4bb; cursor:default; }
+  #message.ok { color:var(--accent); font-size:13px; }
+  #message.ng { color:#b42318; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FAXから納品数量を入れる</h1>
+  <div><label for="store">店舗</label><select id="store"></select></div>
+  <div><label for="date">納品日</label><input type="date" id="date"></div>
+  <div><label for="file">FAXの画像・PDF</label><input type="file" id="file" accept="image/*,.pdf"></div>
+  <a class="link" href="/">品目一覧から入力する画面へ</a>
+</header>
+
+<main>
+  <div class="note">
+    FAXを写した画像かPDFを選ぶと、<b>1行ずつ切り出して下に並べます</b>。<br>
+    書き込みのある行は色を付けてありますが、<b>数字は自動で読み取っていません</b>。
+    切り出した画像を見て、ご自身で数量を入れてください
+    （読み違いで請求金額が狂うのを防ぐため、あえて人の目で確認する形にしています）。<br>
+    高野原店のようなロット制の店舗では、FAXに書かれた数はロット数です。
+  </div>
+  <div id="content"></div>
+</main>
+
+<footer>
+  <div><div class="sub">原価合計（税込）</div><div class="total" id="costTotal">0 円</div></div>
+  <div><div class="sub">送料</div><div class="total" id="shipping">0 円</div></div>
+  <div><div class="sub">納品書の合計</div><div class="total" id="grandTotal">0 円</div></div>
+  <button id="save" disabled>保存する</button>
+  <span id="message"></span>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const yen = (n) => n.toLocaleString("ja-JP") + " 円";
+let state = { store:null, products:[], rows:[], quantities:{} };
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json();
+  if (!response.ok || body.error) throw new Error(body.error || "通信に失敗しました");
+  return body;
+}
+function setMessage(text, ok = true) {
+  $("message").textContent = text;
+  $("message").className = ok ? "ok" : "ng";
+}
+
+function recalc() {
+  let cost = 0, count = 0;
+  for (const [code, entered] of Object.entries(state.quantities)) {
+    const product = state.products.find((p) => p.code === code);
+    if (!product || entered <= 0) continue;
+    const qty = state.store.order_unit === "lot" ? entered * product.min_lot : entered;
+    cost += qty * product.cost_price;
+    count += 1;
+  }
+  const shipping = count > 0 ? (state.store.shipping || 0) : 0;
+  $("costTotal").textContent = yen(cost);
+  $("shipping").textContent = yen(shipping);
+  $("grandTotal").textContent = yen(cost + shipping);
+  $("save").disabled = !($("date").value && count > 0);
+}
+
+function itemOptions(selectedIndex) {
+  return state.products
+    .map((p, i) => `<option value="${p.code}" ${i === selectedIndex ? "selected" : ""}>` +
+                   `${p.name}${p.spec ? "（" + p.spec + "）" : ""}　原価${p.cost_price}円</option>`)
+    .join("");
+}
+
+// FAXの行と商品マスタの並びは必ずしも一致しないので、
+// 品名は「FAXから切り出した画像」を出したうえで、突き合わせる商品を選び直せるようにする
+function renderRows(page) {
+  const rows = page.rows.map((row, i) => `
+    <tr data-index="${row.index}" class="${row.ink >= 0.012 ? "marked" : ""}">
+      <td class="sub">${row.index + 1}</td>
+      <td><img class="strip" src="${row.name}" alt=""></td>
+      <td><img class="strip" src="${row.qty}" alt=""></td>
+      <td><input class="qty" type="number" min="0" step="1" inputmode="numeric" data-index="${row.index}"></td>
+      <td><select class="item" data-index="${row.index}">${itemOptions(i)}</select></td>
+    </tr>`).join("");
+
+  $("content").innerHTML =
+    (page.header ? `<img class="headerimg" src="${page.header}" alt="FAXの上部">` : "") +
+    `<table><thead><tr>
+        <th>行</th><th>FAXの品名</th><th>FAXの発注数</th>
+        <th>入力する数</th><th>この行の商品</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function collect() {
+  state.quantities = {};
+  document.querySelectorAll("input.qty").forEach((input) => {
+    const value = Number(input.value || 0);
+    if (value <= 0) return;
+    const select = document.querySelector(`select.item[data-index="${input.dataset.index}"]`);
+    if (select && select.value) {
+      state.quantities[select.value] = (state.quantities[select.value] || 0) + value;
+    }
+  });
+  recalc();
+}
+
+$("content").addEventListener("input", collect);
+$("content").addEventListener("change", collect);
+$("date").addEventListener("change", recalc);
+
+$("file").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  setMessage("読み取っています…（PDFは少し時間がかかります）");
+  $("content").innerHTML = "";
+  try {
+    const result = await api("/api/fax?name=" + encodeURIComponent(file.name),
+                             { method: "POST", body: file });
+    state.rows = result.pages;
+    renderRows(result.pages[0]);
+    const marked = result.pages[0].rows.filter((r) => r.ink >= 0.012).length;
+    setMessage(`${result.pages.length}ページ中1ページ目を表示しています` +
+               `（${result.pages[0].rows.length}行／書き込みらしき行 ${marked}）。`);
+  } catch (error) {
+    setMessage(error.message, false);
+  }
+  collect();
+});
+
+$("store").addEventListener("change", async () => {
+  const data = await api("/api/products?store=" + encodeURIComponent($("store").value));
+  state.store = data.store;
+  state.products = data.products;
+  if (state.rows.length) renderRows(state.rows[0]);
+  collect();
+});
+
+$("save").addEventListener("click", async () => {
+  $("save").disabled = true;
+  try {
+    const result = await api("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        store: $("store").value, date: $("date").value, quantities: state.quantities,
+      }),
+    });
+    setMessage(`保存しました（${result.saved}品目／納品書の合計 ${yen(result.total)}）。`);
+  } catch (error) {
+    setMessage(error.message, false);
+  }
+  recalc();
+});
+
+(async function init() {
+  const { stores } = await api("/api/stores");
+  $("store").innerHTML = stores
+    .map((s) => `<option value="${s.code}">${s.short_name}（${s.group}）</option>`).join("");
+  $("date").value = new Date().toISOString().slice(0, 10);
+  $("store").dispatchEvent(new Event("change"));
+})();
+</script>
+</body>
+</html>
