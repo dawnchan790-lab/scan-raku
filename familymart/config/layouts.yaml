@@ -1,0 +1,64 @@
+# 帳票レイアウト定義
+#
+# 現行の納品書・請求書 Excel を「テンプレート」として読み込み、
+# 罫線・ロゴ・レイアウトを一切崩さずに、指定したセルへ値だけを流し込みます。
+# 書式を変えたいときはテンプレートの .xlsx 側を直接編集してください。
+#
+# cells : 1箇所だけ書き込む項目。"G2" のような文字列か、
+#         {ref: G2, format: "%Y年%m月%d日"} のように書式を指定できます。
+#         format を省略すると日付は日付型のまま書き込まれ、テンプレート側の表示形式に従います。
+# rows  : 明細行。start 行目から count 行ぶん、columns で指定した列に書き込みます。
+#
+# ★ 現行の納品書 0807230.xlsx を受領したら、実際のセル位置に合わせてここを直します。
+#   （下の値は暫定テンプレート tools/make_placeholder_templates.py に合わせてあります）
+
+delivery_note:
+  sheet: ""            # 空文字ならブックの最初のシート
+  cells:
+    store_name: B3
+    store_honorific: C3
+    delivery_date:
+      ref: G2
+      format: "%Y年%m月%d日"
+    number: G3
+    subtotal: G26
+  rows:
+    start: 7
+    count: 18
+    columns:
+      no: A
+      item_name: B
+      qty: D
+      unit: E
+      unit_price: F
+      amount: G
+  overflow: new_sheet  # new_sheet = 明細が入り切らなければページを増やす / truncate = 切り捨て
+
+invoice:
+  sheet: ""
+  cells:
+    store_name: B3
+    store_honorific: C3
+    period: B4
+    issue_date:
+      ref: G2
+      format: "%Y年%m月%d日"
+    number: G3
+    subtotal: G30
+    tax_total: G31
+    total: G32
+    tax8_taxable: D30
+    tax8_amount: D31
+    tax10_taxable: D32
+    tax10_amount: D33
+  rows:
+    start: 7
+    count: 22
+    columns:
+      delivery_date: A
+      item_name: B
+      qty: D
+      unit: E
+      unit_price: F
+      amount: G
+  overflow: new_sheet

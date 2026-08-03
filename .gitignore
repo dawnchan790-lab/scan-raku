@@ -31,3 +31,12 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+# familymart（納品書・請求書システム）
+__pycache__/
+*.pyc
+.pytest_cache/
+familymart/data/
+familymart/output/
+# Excelを開いたときの一時ファイル
+~$*.xlsx

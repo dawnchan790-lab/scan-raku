@@ -1,0 +1,45 @@
+# 店舗マスタ
+#
+# 店舗ごとの「やり方の違い」はすべてこのファイルで吸収します。
+# コードを変更せず、ここを編集するだけで店舗ごとの挙動を変えられます。
+
+defaults:
+  closing_day: 20          # 毎月20日締め（21日〜翌20日が1請求期間）
+  honorific: 御中
+  delivery_fee:
+    enabled: false         # 既定では配送料なし
+    amount: 550            # 税込金額
+    tax_rate: 10           # 配送料は標準税率10%
+    charge_unit: per_month # per_month = 月1回 / per_delivery = 納品1回ごと
+    label: 配送料
+  delivery_note:
+    template: templates/納品書.xlsx
+    layout: delivery_note   # layouts.yaml のキー
+    copies: 1
+  invoice:
+    template: templates/請求書.xlsx
+    layout: invoice
+    copies: 1
+
+stores:
+  - code: "0807230"
+    name: ファミリーマート国見ヶ丘店
+    short_name: 国見ヶ丘
+    # LINE/FAXの表記ゆれ。仕分けのときに店舗を特定するために使います。
+    aliases:
+      - 国見ケ丘
+      - 国見が丘
+      - 国見丘
+      - くにみがおか
+    delivery_fee:
+      enabled: true        # ← この店は配送料550円（税込）をもらう
+    # 店舗独自の商品呼称 → 自社の正式品目名
+    item_aliases: {}
+
+  - code: "SAMPLE-02"
+    name: ファミリーマート（サンプル）2号店
+    short_name: サンプル2
+    aliases: []
+    delivery_fee:
+      enabled: false       # ← この店は配送料をもらわない
+    item_aliases: {}

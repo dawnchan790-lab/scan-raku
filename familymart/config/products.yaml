@@ -1,0 +1,37 @@
+# 商品マスタ
+#
+# price      : 標準単価（税抜）
+# tax_rate   : 8 = 軽減税率（食品）/ 10 = 標準税率
+# aliases    : FAX/LINEでの表記ゆれ。仕分けのときの品目特定に使います。
+# store_prices: 店舗別単価。ここに書いた店舗は price より優先されます。
+
+defaults:
+  tax_rate: 8
+  unit: 個
+
+products:
+  - code: P001
+    name: キュウリ
+    unit: 袋
+    price: 150
+    aliases: [きゅうり, 胡瓜, きうり]
+
+  - code: P002
+    name: トマト
+    unit: パック
+    price: 220
+    aliases: [とまと, ﾄﾏﾄ]
+    store_prices:
+      "0807230": 230
+
+  - code: P003
+    name: ナス
+    unit: 袋
+    price: 130
+    aliases: [なす, 茄子, ナスビ, なすび]
+
+  - code: P004
+    name: ホウレンソウ
+    unit: 束
+    price: 180
+    aliases: [ほうれん草, ほうれんそう, 法蓮草]
