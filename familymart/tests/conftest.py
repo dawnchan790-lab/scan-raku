@@ -16,4 +16,6 @@ def stores() -> StoreMaster:
 
 @pytest.fixture
 def products() -> ProductMaster:
-    return ProductMaster.load(ROOT / "config" / "products.yaml")
+    return ProductMaster.load(
+        ROOT / "config" / "products.yaml", ROOT / "config" / "aliases.yaml"
+    )

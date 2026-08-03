@@ -1,7 +1,7 @@
 """現行のExcel帳票をテンプレートとして使い、値だけを流し込む出力エンジン。
 
-openpyxl でテンプレートを開いてセルに書き込み、別名で保存する。
-罫線・フォント・列幅・印刷設定はテンプレートのものがそのまま残る。
+テンプレートには現行の数式がそのまま残してある（金額＝数量×単価、合計、消費税など）。
+このエンジンが書き込むのは「人が入力していた値」だけで、計算はExcelの数式が行う。
 """
 
 from __future__ import annotations
@@ -16,6 +16,10 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from .models import DeliveryNote, Invoice
+
+
+class TemplateOverflowError(Exception):
+    """明細がテンプレートの行数に収まらない。"""
 
 
 @dataclass
@@ -42,7 +46,7 @@ class Layout:
     sheet: str
     cells: dict[str, CellSpec]
     rows: RowSpec
-    overflow: str = "new_sheet"
+    overflow: str = "new_sheet"   # new_sheet | truncate | error
 
     @classmethod
     def parse(cls, raw: dict) -> "Layout":
@@ -72,7 +76,7 @@ class TemplateWriter:
         if not self.template_path.exists():
             raise FileNotFoundError(
                 f"テンプレートが見つかりません: {self.template_path}\n"
-                "現行の納品書/請求書のExcelを templates/ に置いてください。"
+                "python3 tools/build_templates.py で現行ブックから生成できます。"
             )
         self.layout = layout
 
@@ -83,6 +87,13 @@ class TemplateWriter:
         )
 
         per_page = self.layout.rows.count or max(len(rows), 1)
+        if len(rows) > per_page and self.layout.overflow == "error":
+            raise TemplateOverflowError(
+                f"明細が{len(rows)}行あり、テンプレートの{per_page}行に収まりません。\n"
+                f"{self.template_path.name} の明細行を増やし、"
+                "config/layouts.yaml の rows.count と集計式の範囲を合わせてください。"
+            )
+
         pages = [rows[i : i + per_page] for i in range(0, len(rows), per_page)] or [[]]
         if self.layout.overflow == "truncate":
             pages = pages[:1]
@@ -116,29 +127,33 @@ class TemplateWriter:
             for key, column in row_spec.columns.items():
                 cell = sheet[f"{column}{excel_row}"]
                 if values is None:
-                    # テンプレートに残っているサンプル値を消す（罫線は残る）
+                    # 未使用の行は空にする。金額欄はテンプレートの数式が空欄を返すので触らない。
                     cell.value = None
-                elif key == "no":
+                elif key == "line_no":
                     cell.value = first_row_no + offset
                 else:
                     cell.value = _format_value(values.get(key), None)
 
 
 def delivery_note_payload(note: DeliveryNote) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """納品書テンプレートに流し込む値。
+
+    金額（F列・G列）と合計行はテンプレートの数式が計算するので渡さない。
+    """
     header = {
-        "store_name": note.store.name,
-        "store_honorific": note.store.honorific,
+        "store_name": note.store.note_addressee,
         "delivery_date": note.delivery_date,
         "number": note.number,
-        "subtotal": note.subtotal,
+        # 送料行。もらわない店舗は None を書いて空欄にする（数式側が0扱いにする）
+        "shipping_label": note.store.delivery_fee.label if note.shipping_fee else None,
+        "shipping_cost": note.shipping_fee or None,
     }
     rows = [
         {
             "item_name": ln.item_name,
+            "retail_price": ln.retail_price,
+            "cost_price": ln.cost_price,
             "qty": _clean_qty(ln.qty),
-            "unit": ln.unit,
-            "unit_price": ln.unit_price,
-            "amount": ln.amount,
         }
         for ln in note.lines
     ]
@@ -146,31 +161,27 @@ def delivery_note_payload(note: DeliveryNote) -> tuple[dict[str, Any], list[dict
 
 
 def invoice_payload(invoice: Invoice) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    by_rate = {st.tax_rate: st for st in invoice.tax_subtotals}
+    """請求書テンプレートに流し込む値。
+
+    税率欄・合計・内消費税はテンプレートの数式が計算するので渡さない。
+    """
     header = {
-        "store_name": invoice.store.name,
-        "store_honorific": invoice.store.honorific,
-        "period": f"{invoice.period_start:%Y年%m月%d日}〜{invoice.period_end:%Y年%m月%d日}",
+        "store_name": f"{invoice.store.name}",
         "issue_date": invoice.issue_date,
         "number": invoice.number,
-        "subtotal": invoice.subtotal,
-        "tax_total": invoice.tax_total,
-        "total": invoice.total,
-        "tax8_taxable": by_rate[8].taxable_amount if 8 in by_rate else 0,
-        "tax8_amount": by_rate[8].tax_amount if 8 in by_rate else 0,
-        "tax10_taxable": by_rate[10].taxable_amount if 10 in by_rate else 0,
-        "tax10_amount": by_rate[10].tax_amount if 10 in by_rate else 0,
+        "payment_due": invoice.payment_due,
     }
     rows = [
         {
-            "delivery_date": ln.delivery_date,
-            "item_name": ln.item_name,
-            "qty": _clean_qty(ln.qty),
-            "unit": ln.unit,
-            "unit_price": ln.unit_price,
-            "amount": ln.amount,
+            "sale_date": r.sale_date,
+            "item_name": r.item_name,
+            # 「※」が入っている行を8%対象として集計式が拾う
+            "reduced_mark": "※" if r.reduced_tax else None,
+            "qty": r.qty,
+            "unit": r.unit or None,
+            "amount": r.amount,
         }
-        for ln in invoice.lines
+        for r in invoice.rows
     ]
     return header, rows
 

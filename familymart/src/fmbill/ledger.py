@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS order_lines (
     product_code TEXT NOT NULL DEFAULT '',
     item_name    TEXT NOT NULL,
     qty          REAL NOT NULL,
+    input_qty    REAL NOT NULL DEFAULT 0,
     unit         TEXT NOT NULL DEFAULT '',
     note         TEXT NOT NULL DEFAULT '',
     raw_text     TEXT NOT NULL DEFAULT ''
@@ -80,14 +81,15 @@ class Ledger:
                 )
                 order.order_id = cursor.lastrowid
                 conn.executemany(
-                    "INSERT INTO order_lines (order_id, product_code, item_name, qty, unit,"
-                    " note, raw_text) VALUES (?,?,?,?,?,?,?)",
+                    "INSERT INTO order_lines (order_id, product_code, item_name, qty,"
+                    " input_qty, unit, note, raw_text) VALUES (?,?,?,?,?,?,?,?)",
                     [
                         (
                             order.order_id,
                             ln.product_code,
                             ln.item_name,
                             ln.qty,
+                            ln.input_qty,
                             ln.unit,
                             ln.note,
                             ln.raw_text,
@@ -130,6 +132,7 @@ class Ledger:
                     raw_text=row["raw_text"],
                     item_name=row["item_name"],
                     qty=row["qty"],
+                    input_qty=row["input_qty"],
                     unit=row["unit"],
                     product_code=row["product_code"],
                     note=row["note"],

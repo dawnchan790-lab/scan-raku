@@ -42,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
     p_inv = sub.add_parser("seikyu", help="請求書を作成（20日締め）")
     p_inv.add_argument("--month", required=True, help="締め年月 YYYY-MM")
     p_inv.add_argument("--store", help="店舗コード。省略時は全店舗ぶん")
+    p_inv.add_argument("--issue-date", dest="issue_date", help="発行日 YYYY-MM-DD（既定は締め日）")
+    p_inv.add_argument("--due", help="振込期日 YYYY-MM-DD")
 
     args = parser.parse_args(argv)
     ctx = AppContext()
@@ -122,7 +124,7 @@ def _cmd_delivery_note(ctx: AppContext, args) -> int:
         note = build_delivery_note(
             store,
             delivery_date,
-            [o for o in orders if o.store_code == store_code],
+            orders,
             ctx.products,
             number=f"{delivery_date:%Y%m%d}-{store_code}",
         )
@@ -130,7 +132,11 @@ def _cmd_delivery_note(ctx: AppContext, args) -> int:
         writer = TemplateWriter(ctx.resolve(rule.template), ctx.layouts[rule.layout])
         out = ctx.output_dir / f"納品書_{delivery_date:%Y%m%d}_{store.display_name}.xlsx"
         writer.render(header, rows, out)
-        print(f"納品書を作成しました（{len(note.lines)}行 / 計{note.subtotal:,}円）: {out}")
+        fee = f" + 送料{note.shipping_fee:,}円" if note.shipping_fee else ""
+        print(
+            f"納品書を作成しました（{store.display_name} / {len(note.lines)}品目 / "
+            f"原価計{note.cost_total:,}円{fee} = {note.total:,}円）: {out}"
+        )
     return 0
 
 
@@ -153,6 +159,8 @@ def _cmd_invoice(ctx: AppContext, args) -> int:
             period,
             orders,
             ctx.products,
+            issue_date=args.issue_date and _parse_date(args.issue_date) or None,
+            payment_due=args.due and _parse_date(args.due) or None,
             number=f"{period.end:%Y%m}-{store_code}",
         )
         header, rows = invoice_payload(invoice)
@@ -160,10 +168,10 @@ def _cmd_invoice(ctx: AppContext, args) -> int:
         out = ctx.output_dir / f"請求書_{period.end:%Y%m}_{store.display_name}.xlsx"
         writer.render(header, rows, out)
 
-        fee = "配送料あり" if store.delivery_fee.enabled else "配送料なし"
         print(
-            f"請求書を作成しました（{store.display_name} / {fee} / "
-            f"税抜{invoice.subtotal:,}円 + 税{invoice.tax_total:,}円 = {invoice.total:,}円）: {out}"
+            f"請求書を作成しました（{store.display_name} / 納品{len(invoice.rows)}行 / "
+            f"8%対象{invoice.reduced_total:,}円 + 10%対象{invoice.standard_total:,}円 "
+            f"= 税込{invoice.total:,}円（内消費税{round(invoice.tax_total):,}円））: {out}"
         )
     return 0
 

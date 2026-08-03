@@ -2,17 +2,17 @@ from datetime import date
 
 import pytest
 
-from fmbill.billing import build_invoice, closing_period, period_containing
+from fmbill.billing import build_delivery_note, build_invoice, closing_period, period_containing
 from fmbill.models import Order, OrderLine
 
 
-def _order(store_code: str, day: date, items: list[tuple[str, str, float]]) -> Order:
+def _order(store_code: str, day: date, items: list[tuple[str, float]]) -> Order:
     return Order(
         store_code=store_code,
         delivery_date=day,
         lines=[
-            OrderLine(raw_text="", item_name=name, qty=qty, unit="", product_code=code)
-            for code, name, qty in items
+            OrderLine(raw_text="", item_name=code, qty=qty, input_qty=qty, product_code=code)
+            for code, qty in items
         ],
     )
 
@@ -50,119 +50,149 @@ class TestClosingPeriod:
         assert period_containing(day, closing_day=20).end == expected_end
 
 
+class TestCostPrice:
+    """原価 = ROUNDUP(想定税込売価 × (1 − 粗利益率), 0)"""
+
+    def test_matches_the_current_workbook(self, stores, products):
+        # 現行ブック（宗久グループ 掛け率25%）: バナナ 売価218 → 原価164
+        store = stores.get("KUNIMIGAOKA")
+        banana = products.get("宗久-バナナ")
+        assert banana.retail_price_for(store) == 218
+        assert banana.cost_price_for(store) == 164   # 218×0.75=163.5 → 切り上げ
+
+    def test_store_margin_rate_changes_the_cost(self, stores, products):
+        # 同じ商品でも大郷山崎店は掛け率10%なので原価が上がる
+        banana = products.get("宗久-バナナ")
+        assert banana.cost_price_for(stores.get("KUNIMIGAOKA")) == 164     # 25%
+        assert banana.cost_price_for(stores.get("OOSATOYAMAZAKI")) == 197  # 10% → 196.2 切り上げ
+
+    def test_roundup_never_rounds_down(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
+        for product in products:
+            retail = product.retail_price_for(store)
+            cost = product.cost_price_for(store)
+            assert cost >= retail * (1 - product.margin_rate_for(store))
+
+
+class TestDeliveryNote:
+    def test_shipping_is_added_once_for_a_store_that_charges_it(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
+        orders = [
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 10)]),
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-トマト", 2)]),  # 同じ日の2件目
+        ]
+
+        note = build_delivery_note(store, date(2026, 8, 3), orders, products)
+
+        assert note.shipping_fee == 550
+        assert note.cost_total == 10 * 164 + 2 * 216   # トマト 288×0.75=216
+        assert note.total == note.cost_total + 550
+
+    def test_takanohara_gets_no_shipping(self, stores, products):
+        store = stores.get("TAKANOHARA")
+        orders = [_order("TAKANOHARA", date(2026, 8, 3), [("マル-バナナ太め1本", 4)])]
+
+        note = build_delivery_note(store, date(2026, 8, 3), orders, products)
+
+        assert note.shipping_fee == 0
+        assert note.total == note.cost_total
+
+    def test_no_order_means_no_shipping(self, stores, products):
+        note = build_delivery_note(stores.get("KUNIMIGAOKA"), date(2026, 8, 3), [], products)
+        assert note.shipping_fee == 0
+        assert note.total == 0
+
+    def test_same_item_is_merged(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
+        orders = [
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 3)]),
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 4)]),
+        ]
+
+        note = build_delivery_note(store, date(2026, 8, 3), orders, products)
+
+        assert len(note.lines) == 1
+        assert note.lines[0].qty == 7
+
+
 class TestInvoice:
-    def test_delivery_fee_is_charged_once_per_delivery_day(self, stores, products):
-        store = stores.get("0807230")
+    def test_one_row_per_delivery_date_plus_a_shipping_row(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
         period = closing_period(2026, 8)
         orders = [
-            _order("0807230", date(2026, 7, 25), [("P001", "キュウリ", 10)]),
-            _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 5)]),
-            _order("0807230", date(2026, 8, 3), [("P003", "ナス", 2)]),  # 同じ日の2件目
+            _order("KUNIMIGAOKA", date(2026, 7, 25), [("宗久-バナナ", 10)]),
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 5)]),
         ]
 
         invoice = build_invoice(store, period, orders, products)
-        fee_lines = [ln for ln in invoice.lines if ln.item_name == "配送料"]
 
-        # 納品日は7/25と8/3の2日 → 同じ日に2件届いても配送料は1回ぶん
-        assert len(fee_lines) == 2
-        assert [ln.delivery_date for ln in fee_lines] == [date(2026, 7, 25), date(2026, 8, 3)]
-        # 税込550円 → 税抜500円 + 消費税50円
-        assert all(ln.unit_price == 500 and ln.tax_rate == 10 for ln in fee_lines)
+        assert [(r.sale_date, r.item_name, r.amount) for r in invoice.rows] == [
+            (date(2026, 7, 25), "売上", 1640),
+            (date(2026, 7, 25), "送料", 550),
+            (date(2026, 8, 3), "売上", 820),
+            (date(2026, 8, 3), "送料", 550),
+        ]
 
-    def test_store_without_delivery_fee_gets_no_fee_line(self, stores, products):
-        store = stores.get("SAMPLE-02")
+    def test_takanohara_invoice_has_no_shipping_rows(self, stores, products):
+        store = stores.get("TAKANOHARA")
         period = closing_period(2026, 8)
-        orders = [_order("SAMPLE-02", date(2026, 8, 3), [("P001", "キュウリ", 5)])]
+        orders = [_order("TAKANOHARA", date(2026, 8, 3), [("マル-バナナ太め1本", 4)])]
 
         invoice = build_invoice(store, period, orders, products)
 
-        assert [ln for ln in invoice.lines if ln.item_name == "配送料"] == []
-        assert invoice.tax_total == 5 * 150 * 8 // 100
+        assert [r.item_name for r in invoice.rows] == ["売上"]
+        assert invoice.standard_total == 0
 
-    def test_totals_split_food_8_percent_from_delivery_fee_10_percent(self, stores, products):
-        store = stores.get("0807230")
+    def test_totals_split_8_percent_from_10_percent(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
         period = closing_period(2026, 8)
-        # キュウリ150円 × 10 = 1,500円（8%）、配送料 税抜500円（10%）
-        orders = [_order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 10)])]
+        orders = [_order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 10)])]
 
         invoice = build_invoice(store, period, orders, products)
-        by_rate = {st.tax_rate: st for st in invoice.tax_subtotals}
 
-        assert by_rate[8].taxable_amount == 1500
-        assert by_rate[8].tax_amount == 120
-        assert by_rate[10].taxable_amount == 500
-        assert by_rate[10].tax_amount == 50
-        assert invoice.subtotal == 2000
-        assert invoice.total == 2170
+        assert invoice.reduced_total == 1640    # 商品（軽減税率8%）
+        assert invoice.standard_total == 550    # 送料（標準税率10%）
+        assert invoice.total == 2190
 
-    def test_store_specific_price_overrides_standard_price(self, stores, products):
-        store = stores.get("0807230")
+    def test_tax_is_derived_from_tax_inclusive_amounts(self, stores, products):
+        """税込金額から内消費税を逆算する。10%は「÷11」相当（現行ファイルは÷10で誤り）。"""
+        store = stores.get("KUNIMIGAOKA")
         period = closing_period(2026, 8)
-        orders = [_order("0807230", date(2026, 8, 3), [("P002", "トマト", 3)])]
+        # 送料550円が7回分 = 3,850円（現行の請求書と同じ条件）
+        orders = [
+            _order("KUNIMIGAOKA", date(2026, 8, day), [("宗久-バナナ", 1)])
+            for day in (3, 4, 5, 6, 7, 10, 11)
+        ]
 
         invoice = build_invoice(store, period, orders, products)
-        tomato = next(ln for ln in invoice.lines if ln.item_name == "トマト")
 
-        assert tomato.unit_price == 230  # 標準220円ではなく店舗別単価
-        assert tomato.amount == 690
+        assert invoice.standard_total == 3850
+        assert round(invoice.standard_tax_amount) == 350   # 3850/11。385ではない
 
-    def test_same_item_on_the_same_day_is_merged(self, stores, products):
-        store = stores.get("0807230")
+    def test_orders_outside_the_period_are_excluded(self, stores, products):
+        store = stores.get("KUNIMIGAOKA")
+        period = closing_period(2026, 8)     # 2026/07/21〜2026/08/20
+        orders = [
+            _order("KUNIMIGAOKA", date(2026, 7, 20), [("宗久-バナナ", 1)]),  # 期間外
+            _order("KUNIMIGAOKA", date(2026, 7, 21), [("宗久-バナナ", 1)]),  # 初日
+            _order("KUNIMIGAOKA", date(2026, 8, 20), [("宗久-バナナ", 1)]),  # 最終日
+            _order("KUNIMIGAOKA", date(2026, 8, 21), [("宗久-バナナ", 1)]),  # 期間外
+        ]
+
+        invoice = build_invoice(store, period, orders, products)
+
+        assert sorted({r.sale_date for r in invoice.rows}) == [
+            date(2026, 7, 21),
+            date(2026, 8, 20),
+        ]
+
+    def test_other_stores_are_not_mixed_in(self, stores, products):
         period = closing_period(2026, 8)
         orders = [
-            _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 3)]),
-            _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 4)]),
-            _order("0807230", date(2026, 8, 5), [("P001", "キュウリ", 2)]),
+            _order("KUNIMIGAOKA", date(2026, 8, 3), [("宗久-バナナ", 1)]),
+            _order("TSUTSUMICHO", date(2026, 8, 3), [("宗久-バナナ", 9)]),
         ]
 
-        invoice = build_invoice(store, period, orders, products)
-        cucumbers = [ln for ln in invoice.lines if ln.item_name == "キュウリ"]
+        invoice = build_invoice(stores.get("KUNIMIGAOKA"), period, orders, products)
 
-        # 同じ日ぶんは1行にまとまり、別の日は別行のまま残る
-        assert len(cucumbers) == 2
-        assert cucumbers[0].qty == 7
-        assert cucumbers[1].qty == 2
-
-    def test_lines_are_ordered_by_delivery_date_with_the_fee_after_its_items(
-        self, stores, products
-    ):
-        store = stores.get("0807230")
-        period = closing_period(2026, 8)
-        orders = [
-            _order("0807230", date(2026, 8, 10), [("P001", "キュウリ", 2)]),
-            _order("0807230", date(2026, 8, 3), [("P003", "ナス", 1)]),
-        ]
-
-        invoice = build_invoice(store, period, orders, products)
-
-        assert [(ln.delivery_date, ln.item_name) for ln in invoice.lines] == [
-            (date(2026, 8, 3), "ナス"),
-            (date(2026, 8, 3), "配送料"),
-            (date(2026, 8, 10), "キュウリ"),
-            (date(2026, 8, 10), "配送料"),
-        ]
-
-    def test_monthly_fee_without_a_delivery_date_is_placed_last(self, stores, products):
-        store = stores.get("0807230")
-        store.delivery_fee.charge_unit = "per_month"
-        period = closing_period(2026, 8)
-        orders = [_order("0807230", date(2026, 8, 3), [("P003", "ナス", 1)])]
-
-        invoice = build_invoice(store, period, orders, products)
-
-        assert invoice.lines[-1].item_name == "配送料"
-        assert invoice.lines[-1].delivery_date is None
-
-    def test_per_month_setting_charges_the_fee_only_once(self, stores, products):
-        # 月1回だけ配送料をもらう店舗に切り替えた場合
-        store = stores.get("0807230")
-        store.delivery_fee.charge_unit = "per_month"
-        period = closing_period(2026, 8)
-        orders = [
-            _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 1)]),
-            _order("0807230", date(2026, 8, 5), [("P001", "キュウリ", 1)]),
-        ]
-
-        invoice = build_invoice(store, period, orders, products)
-
-        assert len([ln for ln in invoice.lines if ln.item_name == "配送料"]) == 1
+        assert invoice.reduced_total == 164

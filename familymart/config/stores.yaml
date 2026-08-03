@@ -1,20 +1,25 @@
 # 店舗マスタ
 #
-# 店舗ごとの「やり方の違い」はすべてこのファイルで吸収します。
-# コードを変更せず、ここを編集するだけで店舗ごとの挙動を変えられます。
+# 店舗ごとの「やり方の違い」はすべてこのファイルで吸収する。
+# コードを変更せず、ここを編集するだけで店舗ごとの挙動が変わる。
+#
+# margin_rate  … 粗利益率（掛け率）。原価＝ROUNDUP(想定税込売価×(1−margin_rate),0)
+# delivery_fee … 送料550円（税込）の有無。納品1回ごとに加算する
+# order_unit   … qty  = 注文に書かれた数をそのまま数量とする
+#                 lot  = 注文に書かれた数はロット数。数量＝ロット数×最小発注ロット
 
 defaults:
   closing_day: 20          # 毎月20日締め（21日〜翌20日が1請求期間）
-  honorific: 御中
+  honorific: 御中          # 請求書の宛名
+  margin_rate: 0.25
+  order_unit: qty
   delivery_fee:
-    enabled: false            # 既定では配送料なし
-    amount: 550               # 税込金額
-    tax_rate: 10              # 配送料は標準税率10%
-    charge_unit: per_delivery # per_delivery = 納品1回ごと / per_month = 月1回
-    label: 配送料
+    enabled: true
+    amount: 550            # 税込
+    label: 送料
   delivery_note:
     template: templates/納品書.xlsx
-    layout: delivery_note   # layouts.yaml のキー
+    layout: delivery_note
     copies: 1
   invoice:
     template: templates/請求書.xlsx
@@ -22,24 +27,69 @@ defaults:
     copies: 1
 
 stores:
-  - code: "0807230"
-    name: ファミリーマート国見ヶ丘店
-    short_name: 国見ヶ丘
-    # LINE/FAXの表記ゆれ。仕分けのときに店舗を特定するために使います。
-    aliases:
-      - 国見ケ丘
-      - 国見が丘
-      - 国見丘
-      - くにみがおか
-    delivery_fee:
-      enabled: true        # ← この店は配送料550円（税込）をもらう
-    # 店舗独自の商品呼称 → 自社の正式品目名
-    item_aliases: {}
+  # ── 宗久グループ ──────────────────────────────────
+  - code: KUNIMIGAOKA
+    name: ファミリーマート　仙台国見ケ丘店
+    short_name: 国見ケ丘
+    group: 宗久グループ
+    aliases: [国見ヶ丘, 国見が丘, 国見丘, くにみがおか]
 
-  - code: "SAMPLE-02"
-    name: ファミリーマート（サンプル）2号店
-    short_name: サンプル2
-    aliases: []
+  - code: OOSATOYAMAZAKI
+    name: ファミリーマート　大郷山崎店
+    short_name: 大郷山崎
+    group: 宗久グループ
+    margin_rate: 0.10        # ← この店だけ掛け率10%
+    aliases: [大郷山崎, おおさとやまざき]
+
+  - code: KAWARADAI1
+    name: ファミリーマート　仙台川平1丁目店
+    short_name: 川平1丁目
+    group: 宗久グループ
+    aliases: [川平一丁目, 川平１丁目, かわらだい]
+
+  - code: TSUTSUMICHO
+    name: ファミリーマート　仙台堤町店
+    short_name: 堤町
+    group: 宗久グループ
+    aliases: [つつみちょう]
+
+  - code: HIROSETACHIMACHI
+    name: ファミリーマート　広瀬立町店
+    short_name: 広瀬立町
+    group: 宗久グループ
+    aliases: [立町, ひろせたちまち]
+
+  # ── 別オーナー ────────────────────────────────────
+  - code: OMACHI2
+    name: ファミリーマート　仙台大町2丁目店
+    short_name: 大町２丁目
+    group: 大町2丁目店（別オーナー）
+    note_name: 大町２丁目店      # 現行の納品書は「様」なしで印字されている
+    aliases: [大町2丁目, 大町二丁目, おおまち]
+
+  # ── マルカ系 ──────────────────────────────────────
+  - code: TAKANOHARA
+    name: ファミリーマート　仙台高野原店
+    short_name: 仙台高野原
+    group: マルカ系
+    margin_rate: 0.28          # ← 掛け率28%
+    order_unit: lot            # ← ロット数で発注する
     delivery_fee:
-      enabled: false       # ← この店は配送料をもらわない
-    item_aliases: {}
+      enabled: false           # ← この店だけ送料なし
+    aliases: [高野原, たかのはら]
+
+  - code: KAMIAYASHI
+    name: ファミリーマート　仙台上愛子店
+    short_name: 仙台上愛子
+    group: マルカ系
+    margin_rate: 0.28
+    order_unit: lot
+    aliases: [上愛子, かみあやし]
+
+  - code: KURYU4
+    name: ファミリーマート　栗生4丁目店
+    short_name: 栗生4丁目
+    group: マルカ系
+    margin_rate: 0.28
+    order_unit: lot
+    aliases: [栗生四丁目, 栗生４丁目, くりゅう]

@@ -1,64 +1,46 @@
-# 帳票レイアウト定義
+# 帳票レイアウト定義（現行Excelの実際のセル位置）
 #
-# 現行の納品書・請求書 Excel を「テンプレート」として読み込み、
-# 罫線・ロゴ・レイアウトを一切崩さずに、指定したセルへ値だけを流し込みます。
-# 書式を変えたいときはテンプレートの .xlsx 側を直接編集してください。
-#
-# cells : 1箇所だけ書き込む項目。"G2" のような文字列か、
-#         {ref: G2, format: "%Y年%m月%d日"} のように書式を指定できます。
-#         format を省略すると日付は日付型のまま書き込まれ、テンプレート側の表示形式に従います。
-# rows  : 明細行。start 行目から count 行ぶん、columns で指定した列に書き込みます。
-#
-# ★ 現行の納品書 0807230.xlsx を受領したら、実際のセル位置に合わせてここを直します。
-#   （下の値は暫定テンプレート tools/make_placeholder_templates.py に合わせてあります）
+# テンプレートには現行の数式が残してあるので、ここで指定するのは
+# 「これまで人が入力していた値」だけ。金額・合計・消費税はExcelの数式が計算する。
+# 数式が入っている列（納品書のF・G列、請求書のN列）はここに書かないこと。
 
 delivery_note:
-  sheet: ""            # 空文字ならブックの最初のシート
+  sheet: 納品書
   cells:
-    store_name: B3
-    store_honorific: C3
-    delivery_date:
-      ref: G2
-      format: "%Y年%m月%d日"
-    number: G3
-    subtotal: G26
+    store_name: C8            # 「仙台高野原店　様」
+    delivery_date: C2
+    shipping_label: B71       # 送料行の品名
+    shipping_cost: D71        # 送料の原価。空欄なら数量・金額の数式も空欄になる
   rows:
-    start: 7
-    count: 18
+    start: 14
+    count: 57                 # 14〜70行
     columns:
-      no: A
+      line_no: A          # 連番。YAMLでは no: が真偽値になるため line_no にしている
       item_name: B
-      qty: D
-      unit: E
-      unit_price: F
-      amount: G
-  overflow: new_sheet  # new_sheet = 明細が入り切らなければページを増やす / truncate = 切り捨て
+      retail_price: C         # 単価（売価）
+      cost_price: D           # 単価（原価）
+      qty: E
+      # F列=金額(売価)、G列=金額(原価) はテンプレートの数式に任せる
+  overflow: new_sheet
 
 invoice:
-  sheet: ""
+  sheet: 請求書
   cells:
-    store_name: B3
-    store_honorific: C3
-    period: B4
-    issue_date:
-      ref: G2
-      format: "%Y年%m月%d日"
-    number: G3
-    subtotal: G30
-    tax_total: G31
-    total: G32
-    tax8_taxable: D30
-    tax8_amount: D31
-    tax10_taxable: D32
-    tax10_amount: D33
+    store_name: B6            # 「ファミリーマート　仙台高野原店」
+    issue_date: O4
+    number: O6
+    payment_due: C17
   rows:
-    start: 7
-    count: 22
+    start: 21
+    count: 26                 # 21〜46行
     columns:
-      delivery_date: A
-      item_name: B
-      qty: D
-      unit: E
-      unit_price: F
-      amount: G
-  overflow: new_sheet
+      sale_date: B
+      item_name: D
+      reduced_mark: K         # 「※」= 軽減税率8%対象。集計式がこの印を拾う
+      qty: L
+      unit: M
+      amount: O               # 金額（税込）
+      # N列=税率 はテンプレートの数式に任せる
+  # 明細が26行に収まらない場合、集計式の範囲とずれて請求額が狂うため、
+  # 黙って2ページに分けずエラーで止める
+  overflow: error

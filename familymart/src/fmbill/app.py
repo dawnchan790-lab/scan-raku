@@ -36,7 +36,10 @@ class AppContext:
 
     @cached_property
     def products(self) -> ProductMaster:
-        return ProductMaster.load(self.config_dir / "products.yaml")
+        return ProductMaster.load(
+            self.config_dir / "products.yaml",
+            self.config_dir / "aliases.yaml",
+        )
 
     @cached_property
     def layouts(self) -> dict[str, Layout]:

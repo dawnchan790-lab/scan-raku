@@ -2,6 +2,7 @@
 
 仕分け帳は社内用の作業帳票なので、テンプレートは使わず一から組み立てる。
 「どの注文が、どの店舗の、どの納品日に振り分けられたか」を目で確認するための帳票。
+金額はすべて税込。
 """
 
 from __future__ import annotations
@@ -18,15 +19,17 @@ from .models import Order
 
 HEADERS = [
     "納品日",
-    "店舗コード",
-    "店舗名",
+    "店舗",
+    "グループ",
     "品目",
+    "注文数",
     "数量",
     "単位",
-    "単価",
-    "金額",
+    "売価",
+    "原価",
+    "金額(原価)",
+    "掛率",
     "取込元",
-    "取込参照",
     "元テキスト",
     "確認",
 ]
@@ -56,20 +59,23 @@ def export_sorting_ledger(
         store = stores.get(order.store_code)
         for line in order.lines:
             product = products.get(line.product_code) if line.matched else None
-            unit_price = product.price_for(store.code) if product else None
-            amount = int(line.qty * unit_price) if unit_price is not None else None
+            retail = product.retail_price_for(store) if product else None
+            cost = product.cost_price_for(store) if product else None
+            margin = product.margin_rate_for(store) if product else None
             sheet.append(
                 [
                     order.delivery_date,
-                    store.code,
-                    store.name,
+                    store.display_name,
+                    store.group,
                     line.item_name,
+                    line.input_qty or line.qty,
                     line.qty,
                     line.unit,
-                    unit_price,
-                    amount,
+                    retail,
+                    cost,
+                    int(line.qty * cost) if cost is not None else None,
+                    margin,
                     order.source,
-                    order.source_ref,
                     line.raw_text,
                     "" if line.matched else "★要確認（商品マスタ未登録）",
                 ]
@@ -83,16 +89,18 @@ def export_sorting_ledger(
 
 
 def _finish(sheet) -> None:
-    widths = [12, 12, 26, 20, 8, 8, 10, 12, 10, 24, 30, 24]
+    widths = [12, 14, 22, 20, 8, 8, 8, 9, 9, 12, 8, 10, 26, 24]
     for index, width in enumerate(widths, start=1):
         sheet.column_dimensions[get_column_letter(index)].width = width
 
     warn_fill = PatternFill("solid", fgColor="FFF3CD")
+    warn_column = len(HEADERS) - 1   # 「確認」列（0起点）
     for row in sheet.iter_rows(min_row=2):
         for cell in row:
             cell.border = _BORDER
         row[0].number_format = "yyyy/mm/dd"
-        if row[11].value:  # 「確認」列に文言が入っている＝要確認行
+        row[10].number_format = "0%"     # 掛率
+        if row[warn_column].value:
             for cell in row:
                 cell.fill = warn_fill
 

@@ -13,7 +13,7 @@ from .textutil import normalize
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
-    """defaults の上に店舗個別設定を重ねる（ネストした dict も再帰的に）。"""
+    """defaults の上に個別設定を重ねる（ネストした dict も再帰的に）。"""
     result = copy.deepcopy(base)
     for key, value in (override or {}).items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
@@ -46,8 +46,12 @@ class StoreMaster:
                     code=str(merged["code"]),
                     name=merged["name"],
                     short_name=merged.get("short_name", ""),
+                    group=merged.get("group", ""),
                     honorific=merged.get("honorific", "御中"),
+                    note_name=merged.get("note_name", ""),
                     closing_day=int(merged.get("closing_day", 20)),
+                    margin_rate=float(merged.get("margin_rate", 0.25)),
+                    order_unit=merged.get("order_unit", "qty"),
                     aliases=[str(a) for a in merged.get("aliases") or []],
                     item_aliases={
                         str(k): str(v) for k, v in (merged.get("item_aliases") or {}).items()
@@ -98,9 +102,15 @@ class ProductMaster:
         self._by_name.sort(key=lambda pair: len(pair[0]), reverse=True)
 
     @classmethod
-    def load(cls, path: str | Path) -> "ProductMaster":
+    def load(cls, path: str | Path, aliases_path: str | Path | None = None) -> "ProductMaster":
+        """商品マスタを読み込む。
+
+        products.yaml は発注書から自動生成するため再生成で上書きされる。
+        手で育てる表記ゆれ辞書は aliases.yaml に分けてあり、ここで合流させる。
+        """
         data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
         defaults = data.get("defaults") or {}
+        extra_aliases = _load_aliases(aliases_path)
         products = []
         for entry in data.get("products") or []:
             merged = _deep_merge(defaults, entry)
@@ -109,11 +119,24 @@ class ProductMaster:
                     code=str(merged["code"]),
                     name=merged["name"],
                     unit=merged.get("unit", "個"),
-                    price=int(merged.get("price", 0)),
-                    tax_rate=int(merged.get("tax_rate", 8)),
-                    aliases=[str(a) for a in merged.get("aliases") or []],
-                    store_prices={
-                        str(k): int(v) for k, v in (merged.get("store_prices") or {}).items()
+                    retail_price=int(merged.get("retail_price", 0)),
+                    margin_rate=(
+                        float(merged["margin_rate"]) if merged.get("margin_rate") is not None else None
+                    ),
+                    min_lot=int(merged.get("min_lot", 1)),
+                    reduced_tax=bool(merged.get("reduced_tax", True)),
+                    origin=merged.get("origin", ""),
+                    spec=merged.get("spec", ""),
+                    storage=merged.get("storage", ""),
+                    shelf_life_days=merged.get("shelf_life_days"),
+                    aliases=[
+                        str(a)
+                        for a in (merged.get("aliases") or [])
+                        + extra_aliases.get(str(merged["code"]), [])
+                    ],
+                    groups=[str(g) for g in merged.get("groups") or []],
+                    store_overrides={
+                        str(k): dict(v) for k, v in (merged.get("store_overrides") or {}).items()
                     },
                 )
             )
@@ -130,15 +153,33 @@ class ProductMaster:
             raise KeyError(f"商品コードが見つかりません: {code}")
         return self._by_code[code]
 
-    def find(self, name: str) -> Optional[Product]:
-        """品目名（表記ゆれ含む）から商品を特定する。見つからなければ None。"""
+    def find(self, name: str, store=None) -> Optional[Product]:
+        """品目名（表記ゆれ含む）から商品を特定する。見つからなければ None。
+
+        store を渡すと、その店舗のグループが扱う商品だけに絞り込む。
+        同じ「バナナ」でもグループごとに売価が違うため、絞り込みは必須に近い。
+        """
         hay = normalize(name)
         if not hay:
             return None
         for candidate, code in self._by_name:
-            if candidate and candidate in hay:
-                return self._by_code[code]
+            if not candidate or candidate not in hay:
+                continue
+            product = self._by_code[code]
+            if product.applies_to(store):
+                return product
         return None
+
+
+def _load_aliases(path: str | Path | None) -> dict[str, list[str]]:
+    """aliases.yaml から {商品コード: [表記ゆれ, ...]} を読む。無ければ空。"""
+    if path is None or not Path(path).exists():
+        return {}
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    return {
+        str(code): [str(a) for a in names or []]
+        for code, names in (data.get("item_aliases") or {}).items()
+    }
 
 
 def _document_rule(raw: Optional[dict]) -> Optional[DocumentRule]:

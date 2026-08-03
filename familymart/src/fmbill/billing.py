@@ -7,14 +7,14 @@ from collections import OrderedDict
 from datetime import date, timedelta
 from typing import Iterable, Optional
 
-from .masters import ProductMaster, StoreMaster
+from .masters import ProductMaster
 from .models import (
-    BilledLine,
+    DeliveryLine,
     DeliveryNote,
     Invoice,
+    InvoiceRow,
     Order,
     Store,
-    TaxSubtotal,
 )
 
 
@@ -68,9 +68,16 @@ def build_delivery_note(
     products: ProductMaster,
     number: str = "",
 ) -> DeliveryNote:
-    """1店舗・1納品日ぶんの納品書データを作る。同一品目は合算する。"""
-    note = DeliveryNote(store=store, delivery_date=delivery_date, number=number)
-    note.lines = _aggregate_lines(store, orders, products, keep_date=False)
+    """1店舗・1納品日ぶんの納品書データを作る。同一品目は合算する。
+
+    送料はその日に1品でも納品があれば加算する（現行の発注書の式と同じ）。
+    """
+    target = [o for o in orders if o.store_code == store.code and o.delivery_date == delivery_date]
+    lines = _aggregate_lines(store, target, products)
+
+    note = DeliveryNote(store=store, delivery_date=delivery_date, lines=lines, number=number)
+    if lines and store.delivery_fee.enabled:
+        note.shipping_fee = store.delivery_fee.amount
     return note
 
 
@@ -80,111 +87,77 @@ def build_invoice(
     orders: Iterable[Order],
     products: ProductMaster,
     issue_date: Optional[date] = None,
+    payment_due: Optional[date] = None,
     number: str = "",
 ) -> Invoice:
     """1店舗・1締め期間ぶんの請求書データを作る。
 
-    明細は納品日ごとに残す（照合しやすさを優先）。
-    配送料はこの店舗の設定に従って加算する。
+    現行の請求書にならい、明細は品目単位ではなく **納品日ごとに1行**（品名「売上」）。
+    送料をもらう店舗は、同じ納品日にもう1行（10%対象）を足す。
     """
     invoice = Invoice(
         store=store,
         period_start=period.start,
         period_end=period.end,
         issue_date=issue_date or period.end,
+        payment_due=payment_due,
         number=number,
     )
-    target = [o for o in orders if o.store_code == store.code]
-    lines = _aggregate_lines(store, target, products, keep_date=True)
-    lines.extend(_delivery_fee_lines(store, target))
-    # 納品日順に並べ替える。安定ソートなので、同じ日では品目のあとに配送料が来る。
-    # 納品日を持たない行（月1回の配送料など）は最後にまとめる。
-    invoice.lines = sorted(lines, key=lambda ln: ln.delivery_date or date.max)
-    invoice.tax_subtotals = _tax_subtotals(invoice.lines)
+
+    target = [
+        o
+        for o in orders
+        if o.store_code == store.code and period.start <= o.delivery_date <= period.end
+    ]
+    for delivery_date in sorted({o.delivery_date for o in target}):
+        note = build_delivery_note(store, delivery_date, target, products)
+        if note.cost_total:
+            invoice.rows.append(
+                InvoiceRow(
+                    sale_date=delivery_date,
+                    item_name="売上",
+                    amount=note.cost_total,
+                    reduced_tax=True,
+                )
+            )
+        if note.shipping_fee:
+            invoice.rows.append(
+                InvoiceRow(
+                    sale_date=delivery_date,
+                    item_name=store.delivery_fee.label,
+                    amount=note.shipping_fee,
+                    reduced_tax=False,
+                )
+            )
+
     return invoice
 
 
 def _aggregate_lines(
-    store: Store,
-    orders: Iterable[Order],
-    products: ProductMaster,
-    keep_date: bool,
-) -> list[BilledLine]:
-    """注文行を (納品日,) 品目 単位でまとめて請求行にする。"""
-    buckets: "OrderedDict[tuple, BilledLine]" = OrderedDict()
+    store: Store, orders: Iterable[Order], products: ProductMaster
+) -> list[DeliveryLine]:
+    """注文行を品目単位でまとめて納品書の明細にする。"""
+    buckets: "OrderedDict[tuple, DeliveryLine]" = OrderedDict()
 
     for order in sorted(orders, key=lambda o: (o.delivery_date, o.order_id or 0)):
         for line in order.lines:
             product = products.get(line.product_code) if line.matched else None
-            unit_price = product.price_for(store.code) if product else 0
-            tax_rate = product.tax_rate if product else 8
+            retail = product.retail_price_for(store) if product else 0
+            cost = product.cost_price_for(store) if product else 0
             unit = line.unit or (product.unit if product else "")
-            day = order.delivery_date if keep_date else None
+            reduced = product.reduced_tax if product else True
 
-            key = (day, line.item_name, unit, unit_price, tax_rate)
+            key = (line.item_name, unit, retail, cost, reduced)
             if key in buckets:
                 buckets[key].qty += line.qty
             else:
-                buckets[key] = BilledLine(
+                buckets[key] = DeliveryLine(
                     item_name=line.item_name,
                     qty=line.qty,
                     unit=unit,
-                    unit_price=unit_price,
-                    tax_rate=tax_rate,
-                    delivery_date=day,
+                    retail_price=retail,
+                    cost_price=cost,
+                    reduced_tax=reduced,
                 )
 
     return list(buckets.values())
-
-
-def _delivery_fee_lines(store: Store, orders: Iterable[Order]) -> list[BilledLine]:
-    """配送料の行を作る。取らない店舗では空リストを返す。"""
-    rule = store.delivery_fee
-    if not rule.enabled:
-        return []
-
-    order_list = list(orders)
-    if not order_list:
-        return []
-
-    unit_price = rule.amount_excluding_tax  # 税込550円 → 税抜500円
-    if rule.charge_unit == "per_delivery":
-        days = sorted({o.delivery_date for o in order_list})
-        return [
-            BilledLine(
-                item_name=rule.label,
-                qty=1,
-                unit="回",
-                unit_price=unit_price,
-                tax_rate=rule.tax_rate,
-                delivery_date=day,
-            )
-            for day in days
-        ]
-
-    return [
-        BilledLine(
-            item_name=rule.label,
-            qty=1,
-            unit="式",
-            unit_price=unit_price,
-            tax_rate=rule.tax_rate,
-            delivery_date=None,
-        )
-    ]
-
-
-def _tax_subtotals(lines: Iterable[BilledLine]) -> list[TaxSubtotal]:
-    """税率ごとに小計と消費税額を出す。消費税は税率ごとに1回だけ端数処理する。"""
-    totals: dict[int, int] = {}
-    for line in lines:
-        totals[line.tax_rate] = totals.get(line.tax_rate, 0) + line.amount
-
-    return [
-        TaxSubtotal(
-            tax_rate=rate,
-            taxable_amount=amount,
-            tax_amount=amount * rate // 100,  # 円未満切り捨て
-        )
-        for rate, amount in sorted(totals.items())
-    ]

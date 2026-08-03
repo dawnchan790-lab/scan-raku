@@ -99,7 +99,7 @@ class OrderParser:
                 result.warnings.append(f"納品日が特定できないため取り込めません: 「{line}」")
                 continue
 
-            order_line = self._to_order_line(current_store.code, raw_line, item_text, qty, unit)
+            order_line = self._to_order_line(current_store.code, raw_line, qty, unit, item_text)
             if not order_line.matched:
                 result.warnings.append(
                     f"商品マスタに無い品目です（要確認）: 「{item_text}」 / {current_store.display_name}"
@@ -120,8 +120,13 @@ class OrderParser:
         return result
 
     def _to_order_line(
-        self, store_code: str, raw: str, item_text: str, qty: float, unit: str
+        self, store_code: str, raw: str, number: float, unit: str, item_text: str
     ) -> OrderLine:
+        """注文の1行を仕分け帳の1行に変換する。
+
+        number は注文に書かれていた数。ロット制の店舗ではロット数なので、
+        最小発注ロットを掛けて実数量に直す。
+        """
         # 店舗独自の呼称をまず自社の正式名称に読み替える
         store = self.stores.get(store_code)
         alias_target = store.item_aliases.get(normalize(item_text)) or store.item_aliases.get(
@@ -129,14 +134,23 @@ class OrderParser:
         )
         lookup = alias_target or item_text
 
-        product = self.products.find(lookup)
+        # 品目リストも売価もグループごとに違うので、店舗で絞って照合する
+        product = self.products.find(lookup, store)
         if product is None:
-            return OrderLine(raw_text=raw.strip(), item_name=lookup, qty=qty, unit=unit)
+            return OrderLine(
+                raw_text=raw.strip(),
+                item_name=lookup,
+                qty=number,
+                input_qty=number,
+                unit=unit,
+            )
 
+        qty = number * product.min_lot if store.order_unit == "lot" else number
         return OrderLine(
             raw_text=raw.strip(),
             item_name=product.name,
             qty=qty,
+            input_qty=number,
             unit=unit or product.unit,
             product_code=product.code,
         )
