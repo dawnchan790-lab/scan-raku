@@ -7,10 +7,10 @@ defaults:
   closing_day: 20          # 毎月20日締め（21日〜翌20日が1請求期間）
   honorific: 御中
   delivery_fee:
-    enabled: false         # 既定では配送料なし
-    amount: 550            # 税込金額
-    tax_rate: 10           # 配送料は標準税率10%
-    charge_unit: per_month # per_month = 月1回 / per_delivery = 納品1回ごと
+    enabled: false            # 既定では配送料なし
+    amount: 550               # 税込金額
+    tax_rate: 10              # 配送料は標準税率10%
+    charge_unit: per_delivery # per_delivery = 納品1回ごと / per_month = 月1回
     label: 配送料
   delivery_note:
     template: templates/納品書.xlsx

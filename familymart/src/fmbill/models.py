@@ -14,7 +14,7 @@ class DeliveryFeeRule:
     enabled: bool = False
     amount: int = 550          # 税込金額
     tax_rate: int = 10
-    charge_unit: str = "per_month"   # per_month | per_delivery
+    charge_unit: str = "per_delivery"   # per_delivery | per_month
     label: str = "配送料"
 
     @property

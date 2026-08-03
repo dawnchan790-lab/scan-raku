@@ -51,21 +51,23 @@ class TestClosingPeriod:
 
 
 class TestInvoice:
-    def test_store_with_delivery_fee_gets_one_550_yen_line_per_month(self, stores, products):
+    def test_delivery_fee_is_charged_once_per_delivery_day(self, stores, products):
         store = stores.get("0807230")
         period = closing_period(2026, 8)
         orders = [
             _order("0807230", date(2026, 7, 25), [("P001", "キュウリ", 10)]),
             _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 5)]),
+            _order("0807230", date(2026, 8, 3), [("P003", "ナス", 2)]),  # 同じ日の2件目
         ]
 
         invoice = build_invoice(store, period, orders, products)
-
         fee_lines = [ln for ln in invoice.lines if ln.item_name == "配送料"]
-        assert len(fee_lines) == 1
+
+        # 納品日は7/25と8/3の2日 → 同じ日に2件届いても配送料は1回ぶん
+        assert len(fee_lines) == 2
+        assert [ln.delivery_date for ln in fee_lines] == [date(2026, 7, 25), date(2026, 8, 3)]
         # 税込550円 → 税抜500円 + 消費税50円
-        assert fee_lines[0].unit_price == 500
-        assert fee_lines[0].tax_rate == 10
+        assert all(ln.unit_price == 500 and ln.tax_rate == 10 for ln in fee_lines)
 
     def test_store_without_delivery_fee_gets_no_fee_line(self, stores, products):
         store = stores.get("SAMPLE-02")
@@ -121,9 +123,40 @@ class TestInvoice:
         assert cucumbers[0].qty == 7
         assert cucumbers[1].qty == 2
 
-    def test_per_delivery_fee_charges_each_delivery_day(self, stores, products):
+    def test_lines_are_ordered_by_delivery_date_with_the_fee_after_its_items(
+        self, stores, products
+    ):
         store = stores.get("0807230")
-        store.delivery_fee.charge_unit = "per_delivery"
+        period = closing_period(2026, 8)
+        orders = [
+            _order("0807230", date(2026, 8, 10), [("P001", "キュウリ", 2)]),
+            _order("0807230", date(2026, 8, 3), [("P003", "ナス", 1)]),
+        ]
+
+        invoice = build_invoice(store, period, orders, products)
+
+        assert [(ln.delivery_date, ln.item_name) for ln in invoice.lines] == [
+            (date(2026, 8, 3), "ナス"),
+            (date(2026, 8, 3), "配送料"),
+            (date(2026, 8, 10), "キュウリ"),
+            (date(2026, 8, 10), "配送料"),
+        ]
+
+    def test_monthly_fee_without_a_delivery_date_is_placed_last(self, stores, products):
+        store = stores.get("0807230")
+        store.delivery_fee.charge_unit = "per_month"
+        period = closing_period(2026, 8)
+        orders = [_order("0807230", date(2026, 8, 3), [("P003", "ナス", 1)])]
+
+        invoice = build_invoice(store, period, orders, products)
+
+        assert invoice.lines[-1].item_name == "配送料"
+        assert invoice.lines[-1].delivery_date is None
+
+    def test_per_month_setting_charges_the_fee_only_once(self, stores, products):
+        # 月1回だけ配送料をもらう店舗に切り替えた場合
+        store = stores.get("0807230")
+        store.delivery_fee.charge_unit = "per_month"
         period = closing_period(2026, 8)
         orders = [
             _order("0807230", date(2026, 8, 3), [("P001", "キュウリ", 1)]),
@@ -132,4 +165,4 @@ class TestInvoice:
 
         invoice = build_invoice(store, period, orders, products)
 
-        assert len([ln for ln in invoice.lines if ln.item_name == "配送料"]) == 2
+        assert len([ln for ln in invoice.lines if ln.item_name == "配送料"]) == 1

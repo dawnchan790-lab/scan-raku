@@ -112,6 +112,7 @@ stores:
     aliases: [国見ケ丘, 国見が丘]   # LINE/FAXの表記ゆれ
     delivery_fee:
       enabled: true                 # ← 配送料550円（税込）をもらう店
+      charge_unit: per_delivery     # 納品1回ごと（既定）／月1回なら per_month
     item_aliases:
       パセリ: イタリアンパセリ        # この店だけの呼び方 → 自社の正式品目名
 
@@ -127,7 +128,7 @@ stores:
 |---|---|
 | 配送料の有無 | `delivery_fee.enabled` |
 | 配送料の金額（税込） | `delivery_fee.amount` |
-| 配送料を月1回かける／納品ごとにかける | `delivery_fee.charge_unit`（`per_month` / `per_delivery`） |
+| 配送料を納品ごと／月1回かける | `delivery_fee.charge_unit`（`per_delivery` / `per_month`） |
 | 締め日 | `closing_day` |
 | 宛名の敬称 | `honorific` |
 | 表記ゆれからの店舗特定 | `aliases` |
@@ -179,6 +180,8 @@ delivery_note:
 - 消費税額は **税率ごとに1回だけ** 端数処理（円未満切り捨て）します。
   行ごとに端数処理しないため、区分記載請求書の要件に合います。
 - 配送料550円は **税込金額** として設定し、税抜500円＋消費税50円に分解します。
+- 配送料は **納品1回ごと** に計上します（同じ日に複数の注文が届いても1回ぶん）。
+  月1回だけにしたい店舗は `charge_unit: per_month` に変更してください。
 
 ## データの保存場所
 
@@ -226,3 +229,4 @@ familymart/
 - [ ] FAXのOCR経路を既存の「スキャ楽」とつなぐ（現在はテキストを渡す前提）
 - [ ] 請求書番号の採番ルール
 - [ ] 納品書の控えの要否・必要部数
+- [ ] インボイス（適格請求書）の登録番号を請求書に載せるか

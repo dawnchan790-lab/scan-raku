@@ -95,8 +95,11 @@ def build_invoice(
         number=number,
     )
     target = [o for o in orders if o.store_code == store.code]
-    invoice.lines = _aggregate_lines(store, target, products, keep_date=True)
-    invoice.lines.extend(_delivery_fee_lines(store, target))
+    lines = _aggregate_lines(store, target, products, keep_date=True)
+    lines.extend(_delivery_fee_lines(store, target))
+    # 納品日順に並べ替える。安定ソートなので、同じ日では品目のあとに配送料が来る。
+    # 納品日を持たない行（月1回の配送料など）は最後にまとめる。
+    invoice.lines = sorted(lines, key=lambda ln: ln.delivery_date or date.max)
     invoice.tax_subtotals = _tax_subtotals(invoice.lines)
     return invoice
 
