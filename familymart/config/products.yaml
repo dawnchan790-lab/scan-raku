@@ -1,661 +1,775 @@
-# 商品マスタ（現行の発注書ブックから取り込み）
+# 商品マスタ
 #
 # retail_price … 想定税込売価
 # margin_rate  … 粗利益率（掛け率）。原価＝ROUNDUP(retail_price×(1−margin_rate),0)
+#                書いていない品目は config/stores.yaml の店舗の掛け率が効く
 # min_lot      … 最小発注ロット。ロット制の店舗は「ロット数×min_lot」が数量になる
-# groups       … この商品を扱うグループ。品目も売価もグループごとに違うため必須
+# groups       … この商品を扱うグループ
 # reduced_tax  … true=軽減税率8%（食品）/ false=標準税率10%
 #
-# ★ このファイルは tools/import_products.py で作り直せます。
-#   売価が変わったら、最新の発注書ブックを渡して再生成してください。
-#   手で足した aliases（表記ゆれ）は再生成で消えるので、別途控えておいてください。
+# 売価は入力画面（価格の編集）からも直せます。
+# 発注書ブックからまとめて取り込み直すときは tools/import_products.py を使ってください。
 
 defaults:
   reduced_tax: true
   unit: 個
 
 products:
-  - code: "宗久-バナナ"
-    name: "バナナ"
+  - code: 宗久-バナナ
+    name: バナナ
     retail_price: 218
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-バナナ-2"
-    name: "バナナ"
+  - code: 宗久-バナナ-2
+    name: バナナ
     retail_price: 358
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-玉ねぎS"
-    name: "玉ねぎS"
+  - code: 宗久-玉ねぎS
+    name: 玉ねぎS
     retail_price: 138
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 10
-  - code: "宗久-玉ねぎL"
-    name: "玉ねぎL"
+  - code: 宗久-玉ねぎL
+    name: 玉ねぎL
     retail_price: 50
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 10
-  - code: "宗久-人参冷蔵保存"
-    name: "人参(冷蔵保存)"
+  - code: 宗久-人参冷蔵保存
+    name: 人参(冷蔵保存)
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-じゃが芋"
-    name: "じゃが芋"
+  - code: 宗久-じゃが芋
+    name: じゃが芋
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-胡瓜2本"
-    name: "胡瓜2本"
+  - code: 宗久-胡瓜2本
+    name: 胡瓜2本
     retail_price: 138
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-トマト"
-    name: "トマト"
+  - code: 宗久-トマト
+    name: トマト
     retail_price: 288
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-トマトパック"
-    name: "トマト(パック)"
+  - code: 宗久-トマトパック
+    name: トマト(パック)
     retail_price: 418
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-ミニトマト"
-    name: "ミニトマト"
+  - code: 宗久-ミニトマト
+    name: ミニトマト
     retail_price: 298
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-ネギ1束"
-    name: "ネギ1束"
+  - code: 宗久-ネギ1束
+    name: ネギ1束
     retail_price: 198
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-ピーマン"
-    name: "ピーマン"
+  - code: 宗久-ピーマン
+    name: ピーマン
     retail_price: 198
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-キャベツ12"
-    name: "キャベツ1/2"
+  - code: 宗久-キャベツ12
+    name: キャベツ1/2
     retail_price: 158
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-レタス"
-    name: "レタス"
+  - code: 宗久-レタス
+    name: レタス
     retail_price: 208
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-白菜14"
-    name: "白菜1/4"
+  - code: 宗久-白菜14
+    name: 白菜1/4
     retail_price: 108
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-大根"
-    name: "大根"
+  - code: 宗久-大根
+    name: 大根
     retail_price: 108
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-小松菜"
-    name: "小松菜"
+  - code: 宗久-小松菜
+    name: 小松菜
     retail_price: 168
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-ほうれん草"
-    name: "ほうれん草"
+  - code: 宗久-ほうれん草
+    name: ほうれん草
     retail_price: 198
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-チンゲン菜"
-    name: "チンゲン菜"
+  - code: 宗久-チンゲン菜
+    name: チンゲン菜
     retail_price: 168
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-豆苗"
-    name: "豆苗"
+  - code: 宗久-豆苗
+    name: 豆苗
     retail_price: 138
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 6
-  - code: "宗久-茄子"
-    name: "茄子"
+  - code: 宗久-茄子
+    name: 茄子
     retail_price: 178
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-国産生姜"
-    name: "国産生姜"
+  - code: 宗久-国産生姜
+    name: 国産生姜
     retail_price: 248
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-ごぼう"
-    name: "ごぼう"
+  - code: 宗久-ごぼう
+    name: ごぼう
     retail_price: 248
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-さつま芋"
-    name: "さつま芋"
+  - code: 宗久-さつま芋
+    name: さつま芋
     retail_price: 298
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 10
-  - code: "宗久-中国ニンニク"
-    name: "中国ニンニク"
+  - code: 宗久-中国ニンニク
+    name: 中国ニンニク
     retail_price: 158
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 10
-  - code: "宗久-えのき茸"
-    name: "えのき茸"
+  - code: 宗久-えのき茸
+    name: えのき茸
     retail_price: 148
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-しめじ"
-    name: "しめじ"
+  - code: 宗久-しめじ
+    name: しめじ
     retail_price: 168
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-しいたけ"
-    name: "しいたけ"
+  - code: 宗久-しいたけ
+    name: しいたけ
     retail_price: 158
-    groups: ["宗久グループ"]
     margin_rate: 0.1
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-まいたけ"
-    name: "まいたけ"
+  - code: 宗久-まいたけ
+    name: まいたけ
     retail_price: 168
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-エリンギ"
-    name: "エリンギ"
+  - code: 宗久-エリンギ
+    name: エリンギ
     retail_price: 168
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-なめこ"
-    name: "なめこ"
+  - code: 宗久-なめこ
+    name: なめこ
     retail_price: 108
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-パプリカ"
-    name: "パプリカ"
+  - code: 宗久-パプリカ
+    name: パプリカ
     retail_price: 248
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-レモン"
-    name: "レモン"
+  - code: 宗久-レモン
+    name: レモン
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 15
-  - code: "宗久-スイカ"
-    name: "スイカ"
+  - code: 宗久-スイカ
+    name: スイカ
     retail_price: 1380
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-キウイフルーツ"
-    name: "キウイフルーツ"
+  - code: 宗久-キウイフルーツ
+    name: キウイフルーツ
     retail_price: 398
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-大葉しそ"
-    name: "大葉しそ"
+  - code: 宗久-大葉しそ
+    name: 大葉しそ
     retail_price: 138
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-リンゴ"
-    name: "リンゴ"
+  - code: 宗久-リンゴ
+    name: リンゴ
     retail_price: 558
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-メロン赤肉"
-    name: "メロン(赤肉)"
+  - code: 宗久-メロン赤肉
+    name: メロン(赤肉)
     retail_price: 598
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-小玉スイカ"
-    name: "小玉スイカ"
+  - code: 宗久-小玉スイカ
+    name: 小玉スイカ
     retail_price: 1380
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-サクランボ"
-    name: "サクランボ"
+  - code: 宗久-サクランボ
+    name: サクランボ
     retail_price: 500
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-長いも"
-    name: "長いも"
+  - code: 宗久-長いも
+    name: 長いも
     retail_price: 198
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-梨1個"
-    name: "梨1個"
+  - code: 宗久-梨1個
+    name: 梨1個
     retail_price: 678
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-天津甘栗"
-    name: "天津甘栗"
+  - code: 宗久-天津甘栗
+    name: 天津甘栗
     retail_price: 418
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 30
-  - code: "宗久-ブドウ"
-    name: "ブドウ"
+  - code: 宗久-ブドウ
+    name: ブドウ
     retail_price: 398
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-桃"
-    name: "桃"
+  - code: 宗久-桃
+    name: 桃
     retail_price: 358
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-ブロッコリー"
-    name: "ブロッコリー"
+  - code: 宗久-ブロッコリー
+    name: ブロッコリー
     retail_price: 198
-    groups: ["宗久グループ"]
-  - code: "宗久-台湾パイン"
-    name: "台湾パイン"
+    groups:
+    - 宗久グループ
+  - code: 宗久-台湾パイン
+    name: 台湾パイン
     retail_price: 780
-    groups: ["宗久グループ"]
-  - code: "宗久-落花生"
-    name: "落花生"
+    groups:
+    - 宗久グループ
+  - code: 宗久-落花生
+    name: 落花生
     retail_price: 398
-    groups: ["宗久グループ"]
-  - code: "宗久-うめ"
-    name: "うめ"
+    groups:
+    - 宗久グループ
+  - code: 宗久-うめ
+    name: うめ
     retail_price: 598
-    groups: ["宗久グループ"]
-  - code: "宗久-みかん"
-    name: "みかん"
+    groups:
+    - 宗久グループ
+  - code: 宗久-みかん
+    name: みかん
     retail_price: 358
-    groups: ["宗久グループ"]
-  - code: "宗久-オレンジ3個"
-    name: "オレンジ3個"
+    groups:
+    - 宗久グループ
+  - code: 宗久-オレンジ3個
+    name: オレンジ3個
     retail_price: 398
-    groups: ["宗久グループ"]
-  - code: "宗久-仏花"
-    name: "仏花"
+    groups:
+    - 宗久グループ
+  - code: 宗久-仏花
+    name: 仏花
     retail_price: 680
-    groups: ["宗久グループ"]
     margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "宗久-仏花-2"
-    name: "仏花"
+    groups:
+    - 宗久グループ
+    reduced_tax: false
+  - code: 宗久-仏花-2
+    name: 仏花
     retail_price: 580
-    groups: ["宗久グループ"]
     margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "宗久-仏花-3"
-    name: "仏花"
+    groups:
+    - 宗久グループ
+    reduced_tax: false
+  - code: 宗久-仏花-3
+    name: 仏花
     retail_price: 780
-    groups: ["宗久グループ"]
     margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "宗久-仏花-4"
-    name: "仏花"
+    groups:
+    - 宗久グループ
+    reduced_tax: false
+  - code: 宗久-仏花-4
+    name: 仏花
     retail_price: 1100
-    groups: ["宗久グループ"]
     margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "宗久-里芋"
-    name: "里芋"
+    groups:
+    - 宗久グループ
+    reduced_tax: false
+  - code: 宗久-里芋
+    name: 里芋
     retail_price: 198
-    groups: ["宗久グループ"]
-  - code: "宗久-天津甘栗-2"
-    name: "天津甘栗"
+    groups:
+    - 宗久グループ
+  - code: 宗久-天津甘栗-2
+    name: 天津甘栗
     retail_price: 398
-    groups: ["宗久グループ"]
-  - code: "宗久-人参"
-    name: "人参"
+    groups:
+    - 宗久グループ
+  - code: 宗久-人参
+    name: 人参
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-フルーツトマト"
-    name: "フルーツトマト"
+  - code: 宗久-フルーツトマト
+    name: フルーツトマト
     retail_price: 238
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-キャベツ1個"
-    name: "キャベツ1個"
+  - code: 宗久-キャベツ1個
+    name: キャベツ1個
     retail_price: 248
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-サニーレタス"
-    name: "サニーレタス"
+  - code: 宗久-サニーレタス
+    name: サニーレタス
     retail_price: 98
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-白菜12個"
-    name: "白菜1/2個"
+  - code: 宗久-白菜12個
+    name: 白菜1/2個
     retail_price: 248
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-大根1本"
-    name: "大根1本"
+  - code: 宗久-大根1本
+    name: 大根1本
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 4
-  - code: "宗久-茄子2本"
-    name: "茄子2本"
+  - code: 宗久-茄子2本
+    name: 茄子2本
     retail_price: 178
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-にら"
-    name: "にら"
+  - code: 宗久-にら
+    name: にら
     retail_price: 98
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-みょうが"
-    name: "みょうが"
+  - code: 宗久-みょうが
+    name: みょうが
     retail_price: 198
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-とうもろこし"
-    name: "とうもろこし"
+  - code: 宗久-とうもろこし
+    name: とうもろこし
     retail_price: 128
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 7
-  - code: "宗久-枝豆200g"
-    name: "枝豆200g"
+  - code: 宗久-枝豆200g
+    name: 枝豆200g
     retail_price: 328
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 5
-  - code: "宗久-シャインマスカット"
-    name: "シャインマスカット"
+  - code: 宗久-シャインマスカット
+    name: シャインマスカット
     retail_price: 1280
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-もも1個"
-    name: "もも1個"
+  - code: 宗久-もも1個
+    name: もも1個
     retail_price: 200
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-デラウエア"
-    name: "デラウエア"
+  - code: 宗久-デラウエア
+    name: デラウエア
     retail_price: 398
-    groups: ["宗久グループ"]
+    groups:
+    - 宗久グループ
     shelf_life_days: 3
-  - code: "宗久-たけのこ水煮"
-    name: "たけのこ水煮"
+  - code: 宗久-たけのこ水煮
+    name: たけのこ水煮
     retail_price: 178
-    groups: ["宗久グループ"]
-  - code: "宗久-豚汁の具"
-    name: "豚汁の具"
+    groups:
+    - 宗久グループ
+  - code: 宗久-豚汁の具
+    name: 豚汁の具
     retail_price: 178
-    groups: ["宗久グループ"]
-  - code: "宗久-メロン"
-    name: "メロン"
+    groups:
+    - 宗久グループ
+  - code: 宗久-メロン
+    name: メロン
     retail_price: 580
-    groups: ["宗久グループ"]
-  - code: "宗久-イチゴ"
-    name: "イチゴ"
+    groups:
+    - 宗久グループ
+  - code: 宗久-イチゴ
+    name: イチゴ
     retail_price: 498
-    groups: ["宗久グループ"]
-  - code: "宗久-新玉ねぎ"
-    name: "新玉ねぎ"
+    groups:
+    - 宗久グループ
+  - code: 宗久-新玉ねぎ
+    name: 新玉ねぎ
     retail_price: 218
-    groups: ["宗久グループ"]
-  - code: "宗久-切り干し大根"
-    name: "切り干し大根"
+    groups:
+    - 宗久グループ
+  - code: 宗久-切り干し大根
+    name: 切り干し大根
     retail_price: 238
-    groups: ["宗久グループ"]
-  - code: "マル-バナナ太め1本"
-    name: "バナナ"
+    groups:
+    - 宗久グループ
+  - code: マル-バナナ太め1本
+    name: バナナ
     retail_price: 98
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 4
-    spec: "太め 1本"
-    storage: "常温"
+    spec: 太め 1本
+    storage: 常温
     shelf_life_days: 3
-  - code: "マル-バナナパック"
-    name: "バナナ"
+  - code: マル-バナナパック
+    name: バナナ
     retail_price: 216
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 5
-    spec: "パック"
+    spec: パック
     shelf_life_days: 3
-  - code: "マル-新玉ねぎM2個"
-    name: "新玉ねぎ"
+  - code: マル-新玉ねぎM2個
+    name: 新玉ねぎ
     retail_price: 158
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 5
-    spec: "M 2個"
-  - code: "マル-人参冷蔵保存S~L"
-    name: "人参(冷蔵保存)"
+    spec: M 2個
+  - code: マル-人参冷蔵保存S~L
+    name: 人参(冷蔵保存)
     retail_price: 128
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 5
-    spec: "S~L"
+    spec: S~L
     shelf_life_days: 5
-  - code: "マル-じゃが芋M3個"
-    name: "じゃが芋"
+  - code: マル-じゃが芋M3個
+    name: じゃが芋
     retail_price: 128
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "M 3個"
-    storage: "常温"
+    spec: M 3個
+    storage: 常温
     shelf_life_days: 10
-  - code: "マル-胡瓜パック"
-    name: "胡瓜"
+  - code: マル-胡瓜パック
+    name: 胡瓜
     retail_price: 138
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
+    spec: パック
     shelf_life_days: 5
-  - code: "マル-トマト2個"
-    name: "トマト"
+  - code: マル-トマト2個
+    name: トマト
     retail_price: 238
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "2個"
-  - code: "マル-レタスパック"
-    name: "レタス"
+    spec: 2個
+  - code: マル-レタスパック
+    name: レタス
     retail_price: 258
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
+    spec: パック
     shelf_life_days: 7
-  - code: "マル-ミニトマトパック"
-    name: "ミニトマト"
+  - code: マル-ミニトマトパック
+    name: ミニトマト
     retail_price: 378
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
+    spec: パック
     shelf_life_days: 5
-  - code: "マル-ネギ1本本"
-    name: "ネギ(1本)"
+  - code: マル-ネギ1本本
+    name: ネギ(1本)
     retail_price: 108
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "本"
-    storage: "要冷"
+    spec: 本
+    storage: 要冷
     shelf_life_days: 7
-  - code: "マル-ピーマンパック"
-    name: "ピーマン"
+  - code: マル-ピーマンパック
+    name: ピーマン
     retail_price: 198
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
+    spec: パック
     shelf_life_days: 5
-  - code: "マル-キャベツ12カット"
-    name: "キャベツ"
+  - code: マル-キャベツ12カット
+    name: キャベツ
     retail_price: 138
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    spec: "1/2カット"
-    storage: "要冷"
+    spec: 1/2カット
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-キャベツ1個"
-    name: "キャベツ"
+  - code: マル-キャベツ1個
+    name: キャベツ
     retail_price: 358
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "1個"
-    storage: "要冷"
+    spec: 1個
+    storage: 要冷
     shelf_life_days: 4
-  - code: "マル-白菜12"
-    name: "白菜1/2"
+  - code: マル-白菜12
+    name: 白菜1/2
     retail_price: 108
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    storage: "要冷"
+    storage: 要冷
     shelf_life_days: 3
-  - code: "マル-小松菜袋"
-    name: "小松菜"
+  - code: マル-小松菜袋
+    name: 小松菜
     retail_price: 168
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "袋"
-    storage: "要冷"
+    spec: 袋
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-大根12本"
-    name: "大根1/2"
+  - code: マル-大根12本
+    name: 大根1/2
     retail_price: 148
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "本"
-    storage: "要冷"
+    spec: 本
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-ほうれん草袋"
-    name: "ほうれん草"
+  - code: マル-ほうれん草袋
+    name: ほうれん草
     retail_price: 238
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    spec: "袋"
-    origin: "宮城"
-    storage: "要冷"
+    spec: 袋
+    origin: 宮城
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-茄子3本パック"
-    name: "茄子"
+  - code: マル-茄子3本パック
+    name: 茄子
     retail_price: 178
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "3本 パック"
+    spec: 3本 パック
     shelf_life_days: 5
-  - code: "マル-国産生姜パック"
-    name: "国産生姜"
+  - code: マル-国産生姜パック
+    name: 国産生姜
     retail_price: 248
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
-    storage: "要冷"
+    spec: パック
+    storage: 要冷
     shelf_life_days: 7
-  - code: "マル-アボカド個"
-    name: "アボカド"
+  - code: マル-アボカド個
+    name: アボカド
     retail_price: 168
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "個"
-    storage: "両方"
+    spec: 個
+    storage: 両方
     shelf_life_days: 5
-  - code: "マル-さつま芋パック"
-    name: "さつま芋"
+  - code: マル-さつま芋パック
+    name: さつま芋
     retail_price: 258
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "パック"
-    storage: "常温"
+    spec: パック
+    storage: 常温
     shelf_life_days: 10
-  - code: "マル-ごぼう"
-    name: "ごぼう"
+  - code: マル-ごぼう
+    name: ごぼう
     retail_price: 198
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
     shelf_life_days: 10
-  - code: "マル-えのき茸"
-    name: "えのき茸"
+  - code: マル-えのき茸
+    name: えのき茸
     retail_price: 178
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
     shelf_life_days: 5
-  - code: "マル-しめじ"
-    name: "しめじ"
+  - code: マル-しめじ
+    name: しめじ
     retail_price: 148
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
     shelf_life_days: 5
-  - code: "マル-しいたけ"
-    name: "しいたけ"
+  - code: マル-しいたけ
+    name: しいたけ
     retail_price: 158
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
     shelf_life_days: 4
-  - code: "マル-まいたけ"
-    name: "まいたけ"
+  - code: マル-まいたけ
+    name: まいたけ
     retail_price: 158
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
     shelf_life_days: 5
-  - code: "マル-エリンギ"
-    name: "エリンギ"
+  - code: マル-エリンギ
+    name: エリンギ
     retail_price: 158
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
     shelf_life_days: 5
-  - code: "マル-なめこ100g"
-    name: "なめこ"
+  - code: マル-なめこ100g
+    name: なめこ
     retail_price: 108
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "100g"
-    storage: "要冷"
+    spec: 100g
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-中国産ニンニク3個入り"
-    name: "中国産ニンニク"
+  - code: マル-中国産ニンニク3個入り
+    name: 中国産ニンニク
     retail_price: 168
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "3個入り"
-    storage: "常温"
+    spec: 3個入り
+    storage: 常温
     shelf_life_days: 15
-  - code: "マル-レモン"
-    name: "レモン"
+  - code: マル-レモン
+    name: レモン
     retail_price: 138
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    origin: "米国"
-    storage: "両方"
+    origin: 米国
+    storage: 両方
     shelf_life_days: 15
-  - code: "マル-甘夏2個パック"
-    name: "甘夏"
+  - code: マル-甘夏2個パック
+    name: 甘夏
     retail_price: 238
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "2個 パック"
-    storage: "要冷"
+    spec: 2個 パック
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-大葉しそ10枚パック"
-    name: "大葉しそ"
+  - code: マル-大葉しそ10枚パック
+    name: 大葉しそ
     retail_price: 128
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "10枚 パック"
+    spec: 10枚 パック
     shelf_life_days: 4
-  - code: "マル-温州みかん5個パック"
-    name: "温州みかん"
+  - code: マル-温州みかん5個パック
+    name: 温州みかん
     retail_price: 378
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
-    spec: "5個 パック"
-    storage: "要冷"
+    spec: 5個 パック
+    storage: 要冷
     shelf_life_days: 5
-  - code: "マル-ソルダムパック"
-    name: "ソルダム"
+  - code: マル-ソルダムパック
+    name: ソルダム
     retail_price: 398
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    spec: "パック"
+    spec: パック
     shelf_life_days: 7
-  - code: "マル-オレンジ2個"
-    name: "オレンジ2個"
+  - code: マル-オレンジ2個
+    name: オレンジ2個
     retail_price: 248
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 3
     shelf_life_days: 5
-  - code: "マル-リンゴパック2個"
-    name: "リンゴ"
+  - code: マル-リンゴパック2個
+    name: リンゴ
     retail_price: 598
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    spec: "パック 2個"
-    storage: "要冷"
+    spec: パック 2個
+    storage: 要冷
     shelf_life_days: 3
-  - code: "マル-メロン4個"
-    name: "メロン"
+  - code: マル-メロン4個
+    name: メロン
     retail_price: 598
-    groups: ["マルカ系"]
+    groups:
+    - マルカ系
     min_lot: 2
-    spec: "4個"
+    spec: 4個
     shelf_life_days: 5

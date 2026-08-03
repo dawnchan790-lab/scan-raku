@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>売価の変更</title>
+<style>
+  :root { --line:#d8dee6; --bg:#f6f8fa; --accent:#0b7285; --edit:#fff3cd; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#1b1f23;
+         font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif; }
+  header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line);
+           padding:12px 16px; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  h1 { font-size:16px; margin:0 8px 0 0; white-space:nowrap; }
+  label { display:block; font-size:12px; color:#57606a; margin-bottom:3px; }
+  select, input[type=search] { font:inherit; padding:6px 8px; border:1px solid var(--line);
+           border-radius:6px; background:#fff; }
+  a.link { font-size:13px; color:var(--accent); }
+  main { padding:14px 16px 120px; }
+  .note { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+          font-size:13px; color:#57606a; margin-bottom:14px; line-height:1.7; }
+  table { border-collapse:collapse; width:100%; background:#fff; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:6px 9px; }
+  th { background:#eef2f6; font-size:12px; color:#57606a; position:sticky; top:60px; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tr.edited { background:var(--edit); }
+  input.price { width:90px; font:inherit; text-align:right; padding:5px 7px;
+                border:1px solid var(--line); border-radius:6px; }
+  input.price:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .tag { font-size:11px; color:#57606a; }
+  footer { position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line);
+           padding:12px 16px; display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  button { font:inherit; font-weight:700; padding:9px 20px; border-radius:8px; border:none;
+           background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { background:#9db4bb; cursor:default; }
+  #message.ok { color:var(--accent); font-size:13px; }
+  #message.ng { color:#b42318; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>売価の変更</h1>
+  <div><label for="store">価格を見る店舗</label><select id="store"></select></div>
+  <div><label for="filter">品目でしぼる</label><input type="search" id="filter" placeholder="バナナ など"></div>
+  <a class="link" href="/">数量の入力画面へ</a>
+</header>
+
+<main>
+  <div class="note">
+    <b>売価を直すと、原価はその場で計算し直されます</b>（原価＝売価×(1−掛け率) の切り上げ）。<br>
+    掛け率は店舗ごとの設定です。同じ商品でも店舗によって原価が変わるので、
+    上で店舗を選ぶとその店の原価が出ます。<br>
+    売価は全店共通（同じ商品リストを使うグループの中で共通）です。
+  </div>
+  <div id="table"></div>
+</main>
+
+<footer>
+  <button id="save" disabled>売価を保存する</button>
+  <button id="reset" style="background:#fff;color:#57606a;border:1px solid var(--line);font-weight:400">
+    変更を取り消す</button>
+  <span id="message"></span>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = { store:null, products:[], edits:{} };
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json();
+  if (!response.ok || body.error) throw new Error(body.error || "通信に失敗しました");
+  return body;
+}
+function setMessage(text, ok = true) {
+  $("message").textContent = text;
+  $("message").className = ok ? "ok" : "ng";
+}
+
+// 原価＝ROUNDUP(売価×(1−掛け率), 0)。Excelと同じく切り上げ。
+const costOf = (retail, margin) => Math.ceil(retail * (1 - margin) - 1e-9);
+
+function render() {
+  const keyword = $("filter").value.trim();
+  const rows = state.products.filter((p) => !keyword || (p.name + p.spec).includes(keyword));
+  if (!rows.length) {
+    $("table").innerHTML = '<div class="note">該当する品目がありません。</div>';
+    return;
+  }
+  const body = rows.map((p) => {
+    const edited = state.edits[p.code];
+    const retail = edited !== undefined ? edited : p.retail_price;
+    const cost = costOf(retail, p.margin_rate);
+    return `<tr data-code="${p.code}" class="${edited !== undefined ? "edited" : ""}">
+      <td>${p.name}${p.spec ? ` <span class="tag">${p.spec}</span>` : ""}
+          ${p.reduced_tax ? "" : ' <span class="tag">10%</span>'}</td>
+      <td class="num"><input class="price" type="number" min="0" step="1" inputmode="numeric"
+           value="${retail}" data-code="${p.code}"></td>
+      <td class="num tag">${Math.round(p.margin_rate * 100)}%</td>
+      <td class="num" data-cost>${cost.toLocaleString("ja-JP")}</td>
+      <td class="num tag">${edited !== undefined ? `変更前 ${p.retail_price.toLocaleString("ja-JP")}` : ""}</td>
+    </tr>`;
+  }).join("");
+  $("table").innerHTML = `<table><thead><tr>
+      <th>品名</th><th class="num">想定税込売価</th><th class="num">掛け率</th>
+      <th class="num">原価（税込）</th><th class="num">変更前</th>
+    </tr></thead><tbody>${body}</tbody></table>`;
+}
+
+// 打ち込むたびに全部描き直すとカーソルが飛ぶので、その行だけ更新する
+$("table").addEventListener("input", (event) => {
+  const input = event.target.closest("input.price");
+  if (!input) return;
+  const product = state.products.find((p) => p.code === input.dataset.code);
+  const value = Number(input.value || 0);
+  if (value === product.retail_price) delete state.edits[product.code];
+  else state.edits[product.code] = value;
+
+  const row = input.closest("tr");
+  row.classList.toggle("edited", state.edits[product.code] !== undefined);
+  row.querySelector("[data-cost]").textContent =
+    costOf(value, product.margin_rate).toLocaleString("ja-JP");
+  const cells = row.querySelectorAll("td");
+  cells[cells.length - 1].textContent =
+    state.edits[product.code] !== undefined
+      ? `変更前 ${product.retail_price.toLocaleString("ja-JP")}` : "";
+  $("save").disabled = Object.keys(state.edits).length === 0;
+  setMessage("");
+});
+
+$("filter").addEventListener("input", render);
+
+async function load() {
+  const data = await api("/api/products?store=" + encodeURIComponent($("store").value));
+  state.store = data.store;
+  state.products = data.products;
+  state.edits = {};
+  $("save").disabled = true;
+  render();
+}
+$("store").addEventListener("change", load);
+
+$("reset").addEventListener("click", () => {
+  if (!Object.keys(state.edits).length) return;
+  state.edits = {};
+  render();
+  $("save").disabled = true;
+  setMessage("変更を取り消しました。");
+});
+
+$("save").addEventListener("click", async () => {
+  $("save").disabled = true;
+  try {
+    const result = await api("/api/prices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prices: state.edits }),
+    });
+    setMessage(`${result.changed}品目の売価を保存しました。原価も計算し直されます。`);
+    await load();
+  } catch (error) {
+    setMessage(error.message, false);
+    $("save").disabled = false;
+  }
+});
+
+(async function init() {
+  const { stores } = await api("/api/stores");
+  $("store").innerHTML = stores
+    .map((s) => `<option value="${s.code}">${s.short_name}（掛け率${Math.round(s.margin_rate*100)}%）</option>`)
+    .join("");
+  await load();
+})();
+</script>
+</body>
+</html>

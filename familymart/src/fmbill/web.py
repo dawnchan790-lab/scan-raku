@@ -54,6 +54,8 @@ class InputHandler(BaseHTTPRequestHandler):
             )
         if route.path == "/fax":
             return self._send_file(STATIC_DIR / "fax.html", "text/html; charset=utf-8")
+        if route.path == "/kakaku":
+            return self._send_file(STATIC_DIR / "kakaku.html", "text/html; charset=utf-8")
         self._send_json({"error": "not found"}, status=404)
 
     # ----------------------------------------------------------------- POST
@@ -67,6 +69,9 @@ class InputHandler(BaseHTTPRequestHandler):
             if route.path == "/api/fax":
                 name = parse_qs(route.query).get("name", ["fax.pdf"])[0]
                 return self._send_json(self._read_fax(self.rfile.read(length), name))
+            if route.path == "/api/prices":
+                body = json.loads(self.rfile.read(length) or b"{}")
+                return self._send_json(self._save_prices(body))
             self._send_json({"error": "not found"}, status=404)
         except Exception as error:  # 画面側で原因が見えるように本文で返す
             self._send_json({"error": str(error)}, status=400)
@@ -106,6 +111,16 @@ class InputHandler(BaseHTTPRequestHandler):
                 }
             )
         return {"pages": pages}
+
+    def _save_prices(self, body: dict) -> dict:
+        """売価の変更を商品マスタに書き戻す。原価は掛け率から計算し直される。"""
+        from .pricebook import update_prices
+
+        prices = {str(k): int(v) for k, v in (body.get("prices") or {}).items()}
+        changed = update_prices(self.ctx.config_dir / "products.yaml", prices)
+        # 次に読むときに新しい売価が効くよう、読み込み済みのマスタを捨てる
+        self.ctx.__dict__.pop("products", None)
+        return {"changed": changed}
 
     # ------------------------------------------------------------- handlers
     def _stores(self) -> list[dict]:
