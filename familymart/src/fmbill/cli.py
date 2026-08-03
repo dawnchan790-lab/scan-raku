@@ -2,6 +2,7 @@
 
     python3 -m fmbill torikomi   注文.txt          # 取り込み → 仕分け帳へ
     python3 -m fmbill shiwake    --month 2026-08   # 仕分け帳をExcelで確認
+    python3 -m fmbill nyuryoku                     # 納品数量の入力画面を開く
     python3 -m fmbill nouhin     --date 2026-08-07 # 納品書を作成
     python3 -m fmbill seikyu     --month 2026-08   # 20日締めの請求書を作成
 """
@@ -39,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
     p_note.add_argument("--date", required=True, help="納品日 YYYY-MM-DD")
     p_note.add_argument("--store", help="店舗コード。省略時はその日の全店舗ぶん")
 
+    p_web = sub.add_parser("nyuryoku", help="納品数量の入力画面をブラウザで開く")
+    p_web.add_argument("--port", type=int, default=8765)
+    p_web.add_argument("--no-browser", action="store_true", help="ブラウザを自動で開かない")
+
     p_inv = sub.add_parser("seikyu", help="請求書を作成（20日締め）")
     p_inv.add_argument("--month", required=True, help="締め年月 YYYY-MM")
     p_inv.add_argument("--store", help="店舗コード。省略時は全店舗ぶん")
@@ -52,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         "torikomi": _cmd_import,
         "shiwake": _cmd_ledger,
         "nouhin": _cmd_delivery_note,
+        "nyuryoku": _cmd_input_screen,
         "seikyu": _cmd_invoice,
     }
     return handlers[args.command](ctx, args)
@@ -92,6 +98,13 @@ def _cmd_import(ctx: AppContext, args) -> int:
     skipped = len(result.orders) - len(saved)
     print(f"仕分け帳に保存しました: {len(saved)}件" + (f"（重複スキップ {skipped}件）" if skipped else ""))
     return 1 if result.unmatched_count else 0
+
+
+def _cmd_input_screen(ctx: AppContext, args) -> int:
+    from .web import serve
+
+    serve(ctx, port=args.port, open_browser=not args.no_browser)
+    return 0
 
 
 def _cmd_ledger(ctx: AppContext, args) -> int:

@@ -50,7 +50,8 @@ class Store:
     code: str
     name: str                      # 請求書の宛名に使う正式名
     short_name: str = ""
-    group: str = ""                # 宗久グループ など。請求のまとめ方の目印
+    group: str = ""                # 宗久グループ など。オーナー区分の目印
+    price_group: str = ""          # 商品マスタの引き分け。省略時は group と同じ
     honorific: str = "御中"        # 請求書の宛名に添える敬称
     note_name: str = ""            # 納品書の宛名。省略時は「○○店　様」
     closing_day: int = 20
@@ -65,6 +66,11 @@ class Store:
     @property
     def display_name(self) -> str:
         return self.short_name or self.name
+
+    @property
+    def product_group(self) -> str:
+        """この店舗が使う商品リスト。オーナーが違っても同じ売価なら共有する。"""
+        return self.price_group or self.group
 
     @property
     def note_addressee(self) -> str:
@@ -100,7 +106,7 @@ class Product:
     def applies_to(self, store: Optional["Store"]) -> bool:
         if not self.groups or store is None:
             return True
-        return store.group in self.groups
+        return store.product_group in self.groups
 
     @property
     def tax_rate(self) -> int:

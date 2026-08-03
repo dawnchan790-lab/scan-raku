@@ -297,282 +297,100 @@ products:
     name: "天津甘栗"
     retail_price: 398
     groups: ["宗久グループ"]
-  - code: "大町-バナナ"
-    name: "バナナ"
-    retail_price: 218
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 3
-  - code: "大町-バナナ-2"
-    name: "バナナ"
-    retail_price: 93
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 3
-  - code: "大町-玉ねぎS"
-    name: "玉ねぎS"
-    retail_price: 138
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 10
-  - code: "大町-里芋"
-    name: "里芋"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 10
-  - code: "大町-人参"
+  - code: "宗久-人参"
     name: "人参"
     retail_price: 128
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-じゃが芋"
-    name: "じゃが芋"
-    retail_price: 128
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 7
-  - code: "大町-胡瓜2本"
-    name: "胡瓜2本"
-    retail_price: 138
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-トマト"
-    name: "トマト"
-    retail_price: 288
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-フルーツトマト"
+  - code: "宗久-フルーツトマト"
     name: "フルーツトマト"
     retail_price: 238
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 7
-  - code: "大町-ミニトマト"
-    name: "ミニトマト"
-    retail_price: 298
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 7
-  - code: "大町-ネギ1束"
-    name: "ネギ1束"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 7
-  - code: "大町-ピーマン"
-    name: "ピーマン"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-キャベツ1個"
+  - code: "宗久-キャベツ1個"
     name: "キャベツ1個"
     retail_price: 248
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-サニーレタス"
+  - code: "宗久-サニーレタス"
     name: "サニーレタス"
     retail_price: 98
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 4
-  - code: "大町-白菜12個"
+  - code: "宗久-白菜12個"
     name: "白菜1/2個"
     retail_price: 248
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 3
-  - code: "大町-大根1本"
+  - code: "宗久-大根1本"
     name: "大根1本"
     retail_price: 128
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 4
-  - code: "大町-小松菜"
-    name: "小松菜"
-    retail_price: 158
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-レタス"
-    name: "レタス"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-チンゲン菜"
-    name: "チンゲン菜"
-    retail_price: 98
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-豆苗"
-    name: "豆苗"
-    retail_price: 138
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 6
-  - code: "大町-茄子2本"
+  - code: "宗久-茄子2本"
     name: "茄子2本"
     retail_price: 178
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-国産生姜"
-    name: "国産生姜"
-    retail_price: 238
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 7
-  - code: "大町-ごぼう"
-    name: "ごぼう"
-    retail_price: 248
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-さつま芋"
-    name: "さつま芋"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 10
-  - code: "大町-ほうれん草"
-    name: "ほうれん草"
-    retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 10
-  - code: "大町-えのき茸"
-    name: "えのき茸"
-    retail_price: 148
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-しめじ"
-    name: "しめじ"
-    retail_price: 148
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-しいたけ"
-    name: "しいたけ"
-    retail_price: 178
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 4
-  - code: "大町-まいたけ"
-    name: "まいたけ"
-    retail_price: 168
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-エリンギ"
-    name: "エリンギ"
-    retail_price: 168
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-なめこ"
-    name: "なめこ"
-    retail_price: 108
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-にら"
+  - code: "宗久-にら"
     name: "にら"
     retail_price: 98
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-レモン"
-    name: "レモン"
-    retail_price: 128
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 15
-  - code: "大町-中国ニンニク"
-    name: "中国ニンニク"
-    retail_price: 168
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-みょうが"
+  - code: "宗久-みょうが"
     name: "みょうが"
     retail_price: 198
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-大葉しそ"
-    name: "大葉しそ"
-    retail_price: 138
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 4
-  - code: "大町-リンゴ"
-    name: "リンゴ"
-    retail_price: 538
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-とうもろこし"
+  - code: "宗久-とうもろこし"
     name: "とうもろこし"
     retail_price: 128
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 7
-  - code: "大町-キウイフルーツ"
-    name: "キウイフルーツ"
-    retail_price: 398
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 7
-  - code: "大町-枝豆200g"
+  - code: "宗久-枝豆200g"
     name: "枝豆200g"
     retail_price: 328
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 5
-  - code: "大町-ブロッコリー"
-    name: "ブロッコリー"
-    retail_price: 108
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 5
-  - code: "大町-シャインマスカット"
+  - code: "宗久-シャインマスカット"
     name: "シャインマスカット"
     retail_price: 1280
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 3
-  - code: "大町-天津甘栗"
-    name: "天津甘栗"
-    retail_price: 418
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 30
-  - code: "大町-オレンジ3個"
-    name: "オレンジ3個"
-    retail_price: 398
-    groups: ["大町2丁目店（別オーナー）"]
-    shelf_life_days: 3
-  - code: "大町-もも1個"
+  - code: "宗久-もも1個"
     name: "もも1個"
     retail_price: 200
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 3
-  - code: "大町-デラウエア"
+  - code: "宗久-デラウエア"
     name: "デラウエア"
     retail_price: 398
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
     shelf_life_days: 3
-  - code: "大町-たけのこ水煮"
+  - code: "宗久-たけのこ水煮"
     name: "たけのこ水煮"
     retail_price: 178
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-豚汁の具"
+    groups: ["宗久グループ"]
+  - code: "宗久-豚汁の具"
     name: "豚汁の具"
     retail_price: 178
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-メロン"
+    groups: ["宗久グループ"]
+  - code: "宗久-メロン"
     name: "メロン"
     retail_price: 580
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-ブドウ"
-    name: "ブドウ"
-    retail_price: 498
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-イチゴ"
+    groups: ["宗久グループ"]
+  - code: "宗久-イチゴ"
     name: "イチゴ"
     retail_price: 498
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-仏花"
-    name: "仏花"
-    retail_price: 580
-    groups: ["大町2丁目店（別オーナー）"]
-    margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "大町-仏花-2"
-    name: "仏花"
-    retail_price: 780
-    groups: ["大町2丁目店（別オーナー）"]
-    margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "大町-仏花-3"
-    name: "仏花"
-    retail_price: 1100
-    groups: ["大町2丁目店（別オーナー）"]
-    margin_rate: 0.1
-    reduced_tax: false   # 食品ではないため標準税率10%
-  - code: "大町-新玉ねぎ"
+    groups: ["宗久グループ"]
+  - code: "宗久-新玉ねぎ"
     name: "新玉ねぎ"
     retail_price: 218
-    groups: ["大町2丁目店（別オーナー）"]
-  - code: "大町-切り干し大根"
+    groups: ["宗久グループ"]
+  - code: "宗久-切り干し大根"
     name: "切り干し大根"
     retail_price: 238
-    groups: ["大町2丁目店（別オーナー）"]
+    groups: ["宗久グループ"]
   - code: "マル-バナナ太め1本"
     name: "バナナ"
     retail_price: 98

@@ -46,3 +46,54 @@ def test_period_query_includes_both_end_dates(tmp_path):
 
     orders = ledger.orders_between(date(2026, 7, 21), date(2026, 8, 20))
     assert [o.delivery_date for o in orders] == [date(2026, 7, 21), date(2026, 8, 20)]
+
+
+def test_replace_order_overwrites_the_previous_entry(tmp_path):
+    """入力画面で開き直して数量を直したとき、前の内容が残らないこと。"""
+    ledger = Ledger(tmp_path / "test.db")
+
+    def manual(qty: float) -> Order:
+        return Order(
+            store_code="KUNIMIGAOKA",
+            delivery_date=date(2026, 7, 30),
+            lines=[
+                OrderLine(
+                    raw_text="", item_name="バナナ", qty=qty, input_qty=qty,
+                    product_code="宗久-バナナ",
+                )
+            ],
+            source="manual",
+            source_ref="入力画面",
+        )
+
+    ledger.replace_order(manual(10))
+    ledger.replace_order(manual(3))
+
+    orders = ledger.orders_on(date(2026, 7, 30))
+    assert len(orders) == 1
+    assert [ln.qty for ln in orders[0].lines] == [3]
+
+
+def test_replace_order_leaves_other_sources_alone(tmp_path):
+    """入力画面の保存で、FAXから取り込んだ同じ日の注文まで消さないこと。"""
+    ledger = Ledger(tmp_path / "test.db")
+    fax = Order(
+        store_code="KUNIMIGAOKA",
+        delivery_date=date(2026, 7, 30),
+        lines=[OrderLine(raw_text="", item_name="トマト", qty=2, product_code="宗久-トマト")],
+        source="fax",
+        source_ref="fax-1",
+    )
+    ledger.add_orders([fax])
+
+    ledger.replace_order(
+        Order(
+            store_code="KUNIMIGAOKA",
+            delivery_date=date(2026, 7, 30),
+            lines=[OrderLine(raw_text="", item_name="バナナ", qty=1, product_code="宗久-バナナ")],
+            source="manual",
+        )
+    )
+
+    sources = sorted(o.source for o in ledger.orders_on(date(2026, 7, 30)))
+    assert sources == ["fax", "manual"]

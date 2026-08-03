@@ -47,6 +47,7 @@ class StoreMaster:
                     name=merged["name"],
                     short_name=merged.get("short_name", ""),
                     group=merged.get("group", ""),
+                    price_group=merged.get("price_group", ""),
                     honorific=merged.get("honorific", "御中"),
                     note_name=merged.get("note_name", ""),
                     closing_day=int(merged.get("closing_day", 20)),

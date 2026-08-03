@@ -7,7 +7,12 @@
         "templates/現行/⑧発注書納品書_大町2丁目店_080801.xlsx:大町2丁目店（別オーナー）" \\
         "templates/現行/③発注書納品書_マルカ系_7.21納品.xlsx:マルカ系"
 
-引数は「ブックのパス:グループ名」。グループ名は config/stores.yaml の group と合わせる。
+引数は「ブックのパス:グループ名」。グループ名は config/stores.yaml の
+group（または price_group）と合わせる。
+
+同じグループ名を複数のブックに付けると、1つの商品リストに統合します。
+品名が重なった場合は **先に書いたブックの売価を採用**し、
+後のブックにしかない品目を足します。売価が食い違った品目は一覧で報告します。
 """
 
 from __future__ import annotations
@@ -52,6 +57,9 @@ def main(specs: list[str]) -> int:
     entries: list[str] = []
     seen: dict[str, str] = {}
     non_food: list[str] = []
+    # グループごとに「採用した品名」を覚えておき、あとから来たブックと突き合わせる
+    adopted: dict[str, dict[str, object]] = {}
+    conflicts: list[str] = []
     total = 0
 
     for spec in specs:
@@ -78,7 +86,20 @@ def main(specs: list[str]) -> int:
         )
         print(f"    → config/stores.yaml のこのグループの margin_rate を {common_rate} にしてください")
 
+        group_items = adopted.setdefault(group, {})
         for product in products:
+            # 突き合わせは商品コード（品名＋規格）で行う。
+            # 同じ「バナナ」でも規格違いは別商品なので、品名だけで見ると潰れてしまう。
+            previous = group_items.get(product.code)
+            if previous is not None:
+                if previous.retail_price != product.retail_price:
+                    conflicts.append(
+                        f"{group} / {product.name}: "
+                        f"{previous.retail_price}円（採用） ⇔ {product.retail_price}円（{path.name}）"
+                    )
+                continue
+            group_items[product.code] = product
+
             # グループをまたぐと同じ品名でも別商品なので、コードにグループを混ぜる
             code = f"{group[:2]}-{product.code}"
             if code in seen:
@@ -113,6 +134,10 @@ def main(specs: list[str]) -> int:
 
     OUT.write_text(HEADER + "\n".join(entries) + "\n", encoding="utf-8")
     print(f"\n{OUT} に {len(entries)}品目を書き出しました（読み取り {total}件）")
+    if conflicts:
+        print("\n売価が食い違った品目（先に指定したブックの値を採用しました。要確認）:")
+        for item in conflicts:
+            print(f"  - {item}")
     if non_food:
         print("\n食品ではないと判定し、標準税率10%にした品目（要確認）:")
         for item in non_food:

@@ -63,18 +63,28 @@ def test_store_name_followed_by_an_item_on_the_same_line_is_a_detail(stores, pro
     assert [ln.item_name for ln in result.orders[0].lines] == ["バナナ"]
 
 
-def test_product_is_matched_within_the_stores_group(stores, products):
-    """同じ「バナナ」でもグループごとに売価が違うので、店舗のグループで引き分ける。"""
+def test_omachi_shares_the_price_list_with_the_munehisa_group(stores, products):
+    """大町2丁目はオーナーが違うが、売価は宗久グループと同じ商品リストを使う。"""
     parser = OrderParser(stores, products)
 
     kunimi = parser.parse("国見ケ丘\n8/7\nバナナ 1", received_at=date(2026, 8, 1))
     omachi = parser.parse("大町２丁目\n8/7\nバナナ 1", received_at=date(2026, 8, 1))
 
-    kunimi_code = kunimi.orders[0].lines[0].product_code
-    omachi_code = omachi.orders[0].lines[0].product_code
-    assert kunimi_code.startswith("宗久-")
-    assert omachi_code.startswith("大町-")
-    assert kunimi_code != omachi_code
+    assert kunimi.orders[0].lines[0].product_code == omachi.orders[0].lines[0].product_code
+    # オーナー区分は分かれたまま（請求書は別々に出す）
+    assert stores.get("OMACHI2").group != stores.get("KUNIMIGAOKA").group
+    assert stores.get("OMACHI2").product_group == stores.get("KUNIMIGAOKA").product_group
+
+
+def test_maruka_keeps_its_own_price_list(stores, products):
+    """マルカ系は品目も売価も別なので、同じ「バナナ」でも別商品として引く。"""
+    parser = OrderParser(stores, products)
+
+    kunimi = parser.parse("国見ケ丘\n8/7\nバナナ 1", received_at=date(2026, 8, 1))
+    takano = parser.parse("仙台高野原\n8/7\nバナナ 1", received_at=date(2026, 8, 1))
+
+    assert kunimi.orders[0].lines[0].product_code.startswith("宗久-")
+    assert takano.orders[0].lines[0].product_code.startswith("マル-")
 
 
 def test_lot_store_multiplies_by_the_minimum_lot(stores, products):

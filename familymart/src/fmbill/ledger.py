@@ -153,6 +153,21 @@ class Ledger:
             for row in rows
         ]
 
+    def replace_order(self, order: Order) -> Order:
+        """同じ店舗・納品日・取込元の注文を置き換える。
+
+        入力画面からの保存に使う。開き直して数量を直したときに
+        前の内容が残らないよう、いったん消してから入れ直す。
+        """
+        with closing(self._connect()) as conn:
+            conn.execute(
+                "DELETE FROM orders WHERE store_code=? AND delivery_date=? AND source=?",
+                (order.store_code, order.delivery_date.isoformat(), order.source),
+            )
+            conn.commit()
+        saved = self.add_orders([order], skip_duplicates=False)
+        return saved[0]
+
     def orders_on(self, delivery_date: date, store_code: Optional[str] = None) -> list[Order]:
         return self.orders_between(delivery_date, delivery_date, store_code)
 

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>納品数量の入力</title>
+<style>
+  :root {
+    --line: #d8dee6;
+    --bg: #f6f8fa;
+    --accent: #0b7285;
+    --warn: #fff3cd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: #1b1f23;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: #fff; border-bottom: 1px solid var(--line);
+    padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+  }
+  h1 { font-size: 17px; margin: 0 12px 0 0; white-space: nowrap; }
+  label { display: block; font-size: 12px; color: #57606a; margin-bottom: 3px; }
+  select, input[type=date], input[type=search] {
+    font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+  }
+  main { padding: 16px 20px 140px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
+  th {
+    background: #eef2f6; font-size: 12px; color: #57606a; position: sticky; top: 61px;
+  }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.has-qty { background: #eaf6f8; }
+  input.qty {
+    width: 76px; font: inherit; text-align: right; padding: 5px 7px;
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  input.qty:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tag { font-size: 11px; color: #57606a; }
+  .tag.std { background: var(--warn); padding: 1px 5px; border-radius: 4px; color: #7a5b00; }
+  footer {
+    position: fixed; left: 0; right: 0; bottom: 0; background: #fff;
+    border-top: 1px solid var(--line); padding: 12px 20px;
+    display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+  }
+  .total { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 12px; color: #57606a; }
+  button {
+    font: inherit; font-weight: 700; padding: 9px 22px; border-radius: 8px;
+    border: none; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:disabled { background: #9db4bb; cursor: default; }
+  button.ghost { background: #fff; color: #57606a; border: 1px solid var(--line); font-weight: 400; }
+  #message { font-size: 13px; }
+  #message.ok { color: #0b7285; }
+  #message.ng { color: #b42318; }
+  .empty { padding: 40px; text-align: center; color: #57606a; background: #fff; border: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>納品数量の入力</h1>
+  <div><label for="store">店舗</label><select id="store"></select></div>
+  <div><label for="date">納品日</label><input type="date" id="date"></div>
+  <div><label for="filter">品目でしぼる</label><input type="search" id="filter" placeholder="バナナ など"></div>
+  <div class="sub" id="storeInfo"></div>
+</header>
+
+<main>
+  <div id="table"></div>
+</main>
+
+<footer>
+  <div>
+    <div class="sub">原価合計（税込）</div>
+    <div class="total" id="costTotal">0 円</div>
+  </div>
+  <div>
+    <div class="sub">送料</div>
+    <div class="total" id="shipping">0 円</div>
+  </div>
+  <div>
+    <div class="sub">納品書の合計</div>
+    <div class="total" id="grandTotal">0 円</div>
+  </div>
+  <button id="save" disabled>保存する</button>
+  <button id="clear" class="ghost">数量をすべて消す</button>
+  <span id="message"></span>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const yen = (n) => n.toLocaleString("ja-JP") + " 円";
+
+let state = { store: null, products: [], quantities: {} };
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error || "通信に失敗しました");
+  return body;
+}
+
+function setMessage(text, ok = true) {
+  const el = $("message");
+  el.textContent = text;
+  el.className = ok ? "ok" : "ng";
+}
+
+// 数量が入っている品目だけを積み上げて、納品書と同じ金額を出す
+function recalc() {
+  let cost = 0, count = 0;
+  for (const product of state.products) {
+    const entered = Number(state.quantities[product.code] || 0);
+    if (entered <= 0) continue;
+    const qty = state.store.order_unit === "lot" ? entered * product.min_lot : entered;
+    cost += qty * product.cost_price;
+    count += 1;
+  }
+  const shipping = count > 0 ? (state.store.shipping || 0) : 0;
+  $("costTotal").textContent = yen(cost);
+  $("shipping").textContent = yen(shipping);
+  $("grandTotal").textContent = yen(cost + shipping);
+  $("save").disabled = !$("date").value;
+}
+
+function renderTable() {
+  const keyword = $("filter").value.trim();
+  const rows = state.products.filter((p) => !keyword || (p.name + p.spec).includes(keyword));
+  const isLot = state.store.order_unit === "lot";
+
+  if (!rows.length) {
+    $("table").innerHTML = '<div class="empty">該当する品目がありません。</div>';
+    return;
+  }
+
+  const header = `<tr>
+      <th>品名</th><th>規格</th>
+      <th class="num">売価</th><th class="num">原価</th><th class="num">掛率</th>
+      ${isLot ? '<th class="num">ロット</th>' : ""}
+      <th class="num">${isLot ? "ロット数" : "数量"}</th>
+      <th class="num">${isLot ? "実数量" : ""}</th>
+      <th class="num">金額（原価）</th>
+    </tr>`;
+
+  const body = rows.map((p) => {
+    const entered = Number(state.quantities[p.code] || 0);
+    const qty = isLot ? entered * p.min_lot : entered;
+    const tag = p.reduced_tax ? "" : ' <span class="tag std">10%</span>';
+    return `<tr data-code="${p.code}" class="${entered > 0 ? "has-qty" : ""}">
+      <td>${p.name}${tag}</td>
+      <td class="tag">${p.spec || ""}</td>
+      <td class="num">${p.retail_price.toLocaleString("ja-JP")}</td>
+      <td class="num">${p.cost_price.toLocaleString("ja-JP")}</td>
+      <td class="num tag">${Math.round(p.margin_rate * 100)}%</td>
+      ${isLot ? `<td class="num tag">${p.min_lot}</td>` : ""}
+      <td class="num"><input class="qty" type="number" min="0" step="1" inputmode="numeric"
+           value="${entered || ""}" data-code="${p.code}"></td>
+      <td class="num tag">${isLot && entered > 0 ? qty : ""}</td>
+      <td class="num">${entered > 0 ? (qty * p.cost_price).toLocaleString("ja-JP") : ""}</td>
+    </tr>`;
+  }).join("");
+
+  $("table").innerHTML = `<table><thead>${header}</thead><tbody>${body}</tbody></table>`;
+}
+
+// 入力のたびに全部描き直すとカーソルが飛ぶので、その行だけ更新する
+$("table").addEventListener("input", (event) => {
+  const input = event.target.closest("input.qty");
+  if (!input) return;
+  const value = Number(input.value || 0);
+  if (value > 0) state.quantities[input.dataset.code] = value;
+  else delete state.quantities[input.dataset.code];
+
+  const product = state.products.find((p) => p.code === input.dataset.code);
+  const row = input.closest("tr");
+  const isLot = state.store.order_unit === "lot";
+  const qty = isLot ? value * product.min_lot : value;
+  const cells = row.querySelectorAll("td");
+  row.classList.toggle("has-qty", value > 0);
+  if (isLot) cells[cells.length - 2].textContent = value > 0 ? qty : "";
+  cells[cells.length - 1].textContent = value > 0 ? (qty * product.cost_price).toLocaleString("ja-JP") : "";
+  recalc();
+  setMessage("");
+});
+
+async function loadProducts() {
+  const code = $("store").value;
+  if (!code) return;
+  const data = await api("/api/products?store=" + encodeURIComponent(code));
+  state.store = data.store;
+  state.products = data.products;
+  $("storeInfo").textContent =
+    `${data.store.name}／` +
+    (data.store.order_unit === "lot" ? "ロット数で入力" : "数量で入力") +
+    `／送料${data.store.shipping ? data.store.shipping.toLocaleString("ja-JP") + "円" : "なし"}`;
+  await loadQuantities();
+}
+
+async function loadQuantities() {
+  const code = $("store").value, day = $("date").value;
+  state.quantities = {};
+  if (code && day) {
+    const data = await api(`/api/order?store=${encodeURIComponent(code)}&date=${day}`);
+    state.quantities = data.quantities || {};
+    const saved = Object.keys(state.quantities).length;
+    setMessage(saved ? `保存済みの${saved}品目を読み込みました。` : "");
+  }
+  renderTable();
+  recalc();
+}
+
+$("store").addEventListener("change", loadProducts);
+$("date").addEventListener("change", loadQuantities);
+$("filter").addEventListener("input", renderTable);
+
+$("clear").addEventListener("click", () => {
+  if (!Object.keys(state.quantities).length) return;
+  if (!confirm("入力した数量をすべて消します。よろしいですか？")) return;
+  state.quantities = {};
+  renderTable();
+  recalc();
+  setMessage("数量を消しました。保存すると反映されます。");
+});
+
+$("save").addEventListener("click", async () => {
+  $("save").disabled = true;
+  try {
+    const result = await api("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        store: $("store").value,
+        date: $("date").value,
+        quantities: state.quantities,
+      }),
+    });
+    setMessage(
+      `保存しました（${result.saved}品目／納品書の合計 ${yen(result.total)}）。`
+    );
+  } catch (error) {
+    setMessage(error.message, false);
+  }
+  recalc();
+});
+
+(async function init() {
+  const { stores } = await api("/api/stores");
+  $("store").innerHTML = stores
+    .map((s) => `<option value="${s.code}">${s.short_name}（${s.group}）</option>`)
+    .join("");
+  $("date").value = new Date().toISOString().slice(0, 10);
+  await loadProducts();
+})();
+</script>
+</body>
+</html>
