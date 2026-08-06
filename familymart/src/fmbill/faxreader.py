@@ -42,10 +42,11 @@ class FaxCell:
     image: Image.Image      # 発注数のあたりを切り出した画像
     name_image: Optional[Image.Image] = None   # 同じ行の品名側
 
+    written: bool = False   # 書き込みがあるとみなすか（用紙全体を見て判定する）
+
     @property
     def has_writing(self) -> bool:
-        """書き込みがあるとみなすか。"""
-        return self.ink_ratio >= INK_THRESHOLD
+        return self.written
 
 
 @dataclass
@@ -62,13 +63,15 @@ class FaxSheet:
         return [c for c in self.cells if c.has_writing]
 
 
-# 書き込みありと判断する黒画素の割合。かすれたFAXでも拾えるよう低めにしてある。
-INK_THRESHOLD = 0.012
+# 書き込みの判定。FAXの濃さは1枚ごとに大きく変わるので、決め打ちの値では当てにならない。
+# 同じ用紙の中の「ふつうの空欄」と比べて、はっきり濃い行だけを書き込みありとみなす。
+INK_MIN = 0.05           # これ以下は罫線のかすれとみなす
+INK_RELATIVE = 2.0       # 空欄の中央値の何倍で書き込みとみなすか
 
 # 表の左端からの割合で、切り出す範囲を決める。用紙の書式が変わったらここを直す。
 NAME_RIGHT_RATIO = 0.34    # 品名までの範囲
-QTY_LEFT_RATIO = 0.83      # 発注数の欄の左（最小発注ロットの右）
-QTY_RIGHT_RATIO = 0.92     # 発注数の欄の右（計算表の手前）
+QTY_LEFT_RATIO = 0.81      # 発注数の欄の左（最小発注ロットの右）
+QTY_RIGHT_RATIO = 0.86     # 発注数の欄の右（計算表の手前）
 
 
 def load_pages(path: str | Path, dpi: int = 200) -> list[Image.Image]:
@@ -98,7 +101,7 @@ def read_sheet(image: Image.Image, page: int = 1) -> Optional[FaxSheet]:
     image = deskew(image)
     binary = _binarize(image)
 
-    rows = _find_lines(binary.sum(axis=1), binary.shape[1], ratio=0.20)
+    rows = _fill_gaps(_find_lines(binary.sum(axis=1), binary.shape[1], ratio=0.15))
     if len(rows) < 10:
         return None
 
@@ -127,8 +130,23 @@ def read_sheet(image: Image.Image, page: int = 1) -> Optional[FaxSheet]:
             )
         )
 
+    _mark_written(cells)
     header = image.crop((0, 0, image.width, rows[0]))
     return FaxSheet(page=page, cells=cells, header=header, full=image)
+
+
+def _mark_written(cells: list[FaxCell]) -> None:
+    """用紙全体を見て、どの行に書き込みがあるかを決める。
+
+    空欄の行にも罫線のかすれで多少の黒が出る。その「ふつうの濃さ」を
+    中央値で捉え、そこからはっきり離れた行だけを書き込みありとする。
+    """
+    if not cells:
+        return
+    baseline = float(np.median([c.ink_ratio for c in cells]))
+    threshold = max(INK_MIN, baseline * INK_RELATIVE)
+    for cell in cells:
+        cell.written = cell.ink_ratio >= threshold
 
 
 def _table_extent(binary: np.ndarray, rows: list[int]) -> tuple[int, int]:
@@ -214,6 +232,29 @@ def _find_lines(projection: np.ndarray, span: int, ratio: float = 0.45) -> list[
         if position - lines[-1] > gap:
             lines.append(int(position))
     return lines
+
+
+def _fill_gaps(lines: list[int]) -> list[int]:
+    """かすれて拾えなかった罫線を、行の間隔から補って埋める。
+
+    1本見落とすとその2行が1つにつながり、発注数を取りこぼす。
+    行の高さはほぼ一定なので、間隔が広すぎるところに等間隔で足す。
+    """
+    if len(lines) < 4:
+        return lines
+
+    gaps = np.diff(lines)
+    typical = float(np.median(gaps))
+    if typical <= 0:
+        return lines
+
+    filled = [lines[0]]
+    for previous, current in zip(lines, lines[1:]):
+        missing = int(round((current - previous) / typical)) - 1
+        for step in range(1, missing + 1):
+            filled.append(previous + int(round(typical * step)))
+        filled.append(current)
+    return filled
 
 
 def _ink_ratio(crop: Image.Image) -> float:

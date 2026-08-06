@@ -144,7 +144,7 @@ function renderTable() {
       <th class="num">売価</th><th class="num">原価</th><th class="num">掛率</th>
       ${isLot ? '<th class="num">ロット</th>' : ""}
       <th class="num">${isLot ? "ロット数" : "数量"}</th>
-      <th class="num">${isLot ? "実数量" : ""}</th>
+      ${isLot ? '<th class="num">実数量</th>' : ""}
       <th class="num">金額（原価）</th>
     </tr>`;
 
@@ -161,7 +161,7 @@ function renderTable() {
       ${isLot ? `<td class="num tag">${p.min_lot}</td>` : ""}
       <td class="num"><input class="qty" type="number" min="0" step="1" inputmode="numeric"
            value="${entered || ""}" data-code="${p.code}"></td>
-      <td class="num tag">${isLot && entered > 0 ? qty : ""}</td>
+      ${isLot ? `<td class="num tag">${entered > 0 ? qty : ""}</td>` : ""}
       <td class="num">${entered > 0 ? (qty * p.cost_price).toLocaleString("ja-JP") : ""}</td>
     </tr>`;
   }).join("");

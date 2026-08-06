@@ -58,6 +58,11 @@ class InputHandler(BaseHTTPRequestHandler):
             return self._send_file(STATIC_DIR / "kakaku.html", "text/html; charset=utf-8")
         if route.path == "/shorui":
             return self._send_file(STATIC_DIR / "shorui.html", "text/html; charset=utf-8")
+        if route.path == "/favicon.ico":
+            # ブラウザが必ず取りに来る。用意していないので「中身なし」で静かに返す
+            self.send_response(204)
+            self.end_headers()
+            return
         self._send_json({"error": "not found"}, status=404)
 
     # ----------------------------------------------------------------- POST

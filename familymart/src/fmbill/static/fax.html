@@ -21,6 +21,7 @@
           font-size:13px; color:#57606a; margin-bottom:14px; line-height:1.7; }
   .headerimg { max-width:100%; border:1px solid var(--line); border-radius:6px; background:#fff;
                margin-bottom:14px; }
+  .scroll { overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:8px; }
   table { border-collapse:collapse; width:100%; background:#fff; font-size:14px; }
   th, td { border:1px solid var(--line); padding:5px 8px; vertical-align:middle; }
   th { background:#eef2f6; font-size:12px; color:#57606a; position:sticky; top:60px; }
@@ -48,15 +49,26 @@
   <div><label for="store">店舗</label><select id="store"></select></div>
   <div><label for="date">納品日</label><input type="date" id="date"></div>
   <div><label for="file">FAXの画像・PDF</label><input type="file" id="file" accept="image/*,.pdf"></div>
+  <div><label for="offset">商品のずれを直す</label>
+    <select id="offset">
+      <option value="-3">3つ戻す</option><option value="-2">2つ戻す</option>
+      <option value="-1">1つ戻す</option><option value="0" selected>ずらさない</option>
+      <option value="1">1つ進める</option><option value="2">2つ進める</option>
+      <option value="3">3つ進める</option><option value="4">4つ進める</option>
+      <option value="5">5つ進める</option>
+    </select></div>
   <a class="link" href="/">品目一覧から入力</a>　<a class="link" href="/shorui">帳票を作る</a>　<a class="link" href="/kakaku">売価の変更</a>
 </header>
 
 <main>
   <div class="note">
     FAXを写した画像かPDFを選ぶと、<b>1行ずつ切り出して下に並べます</b>。<br>
-    書き込みのある行は色を付けてありますが、<b>数字は自動で読み取っていません</b>。
-    切り出した画像を見て、ご自身で数量を入れてください
+    <b>数字は自動で読み取っていません。</b>切り出した画像を見て、ご自身で数量を入れてください
     （読み違いで請求金額が狂うのを防ぐため、あえて人の目で確認する形にしています）。<br>
+    色が付いている行は「書き込みがありそう」という<b>目安</b>です。
+    付いていない行にも書き込みがあることがあるので、必ず画像をご確認ください。<br>
+    右上の「商品のずれを直す」で、<b>FAXの品名と右端の商品名がそろうように</b>合わせてください。
+    1行合えば、以降もそろいます。<br>
     高野原店のようなロット制の店舗では、FAXに書かれた数はロット数です。
   </div>
   <div id="content"></div>
@@ -109,6 +121,10 @@ function itemOptions(selectedIndex) {
     .join("");
 }
 
+// FAXの行と商品マスタの並びは、用紙の見出し行のぶんだけずれることがある。
+// 画面で1回ずらせば以降の行もそろうようにする。
+function offset() { return Number($("offset").value || 0); }
+
 // FAXの行と商品マスタの並びは必ずしも一致しないので、
 // 品名は「FAXから切り出した画像」を出したうえで、突き合わせる商品を選び直せるようにする
 function renderRows(page) {
@@ -118,15 +134,15 @@ function renderRows(page) {
       <td><img class="strip" src="${row.name}" alt=""></td>
       <td><img class="strip" src="${row.qty}" alt=""></td>
       <td><input class="qty" type="number" min="0" step="1" inputmode="numeric" data-index="${row.index}"></td>
-      <td><select class="item" data-index="${row.index}">${itemOptions(i)}</select></td>
+      <td><select class="item" data-index="${row.index}">${itemOptions(i + offset())}</select></td>
     </tr>`).join("");
 
   $("content").innerHTML =
     (page.header ? `<img class="headerimg" src="${page.header}" alt="FAXの上部">` : "") +
-    `<table><thead><tr>
+    `<div class="scroll"><table><thead><tr>
         <th>行</th><th>FAXの品名</th><th>FAXの発注数</th>
         <th>入力する数</th><th>この行の商品</th>
-      </tr></thead><tbody>${rows}</tbody></table>`;
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function collect() {
@@ -145,6 +161,20 @@ function collect() {
 $("content").addEventListener("input", collect);
 $("content").addEventListener("change", collect);
 $("date").addEventListener("change", recalc);
+
+// ずらしたら、入力済みの数量は残したまま商品の選び直しだけを反映する
+$("offset").addEventListener("change", () => {
+  if (!state.rows.length) return;
+  const entered = {};
+  document.querySelectorAll("input.qty").forEach((i) => {
+    if (Number(i.value || 0) > 0) entered[i.dataset.index] = i.value;
+  });
+  renderRows(state.rows[0]);
+  document.querySelectorAll("input.qty").forEach((i) => {
+    if (entered[i.dataset.index]) i.value = entered[i.dataset.index];
+  });
+  collect();
+});
 
 $("file").addEventListener("change", async (event) => {
   const file = event.target.files[0];
