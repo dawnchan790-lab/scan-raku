@@ -472,7 +472,7 @@ products:
     name: バナナ
     retail_price: 98
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 4
     spec: 太め 1本
     storage: 常温
@@ -481,7 +481,7 @@ products:
     name: バナナ
     retail_price: 216
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 5
     spec: パック
     shelf_life_days: 3
@@ -489,14 +489,14 @@ products:
     name: 新玉ねぎ
     retail_price: 158
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 5
     spec: M 2個
   - code: マル-人参冷蔵保存S~L
     name: 人参(冷蔵保存)
     retail_price: 128
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 5
     spec: S~L
     shelf_life_days: 5
@@ -504,7 +504,7 @@ products:
     name: じゃが芋
     retail_price: 128
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: M 3個
     storage: 常温
@@ -513,7 +513,7 @@ products:
     name: 胡瓜
     retail_price: 138
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     shelf_life_days: 5
@@ -521,14 +521,14 @@ products:
     name: トマト
     retail_price: 238
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 2個
   - code: マル-レタスパック
     name: レタス
     retail_price: 258
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     shelf_life_days: 7
@@ -536,7 +536,7 @@ products:
     name: ミニトマト
     retail_price: 378
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     shelf_life_days: 5
@@ -544,7 +544,7 @@ products:
     name: ネギ(1本)
     retail_price: 108
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 本
     storage: 要冷
@@ -553,7 +553,7 @@ products:
     name: ピーマン
     retail_price: 198
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     shelf_life_days: 5
@@ -561,7 +561,7 @@ products:
     name: キャベツ
     retail_price: 138
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     spec: 1/2カット
     storage: 要冷
@@ -570,7 +570,7 @@ products:
     name: キャベツ
     retail_price: 358
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 1個
     storage: 要冷
@@ -579,7 +579,7 @@ products:
     name: 白菜1/2
     retail_price: 108
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     storage: 要冷
     shelf_life_days: 3
@@ -587,7 +587,7 @@ products:
     name: 小松菜
     retail_price: 168
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 袋
     storage: 要冷
@@ -596,7 +596,7 @@ products:
     name: 大根1/2
     retail_price: 148
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 本
     storage: 要冷
@@ -605,7 +605,7 @@ products:
     name: ほうれん草
     retail_price: 238
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     spec: 袋
     origin: 宮城
@@ -615,7 +615,7 @@ products:
     name: 茄子
     retail_price: 178
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 3本 パック
     shelf_life_days: 5
@@ -623,7 +623,7 @@ products:
     name: 国産生姜
     retail_price: 248
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     storage: 要冷
@@ -632,7 +632,7 @@ products:
     name: アボカド
     retail_price: 168
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 個
     storage: 両方
@@ -641,7 +641,7 @@ products:
     name: さつま芋
     retail_price: 258
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: パック
     storage: 常温
@@ -650,49 +650,49 @@ products:
     name: ごぼう
     retail_price: 198
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     shelf_life_days: 10
   - code: マル-えのき茸
     name: えのき茸
     retail_price: 178
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     shelf_life_days: 5
   - code: マル-しめじ
     name: しめじ
     retail_price: 148
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     shelf_life_days: 5
   - code: マル-しいたけ
     name: しいたけ
     retail_price: 158
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     shelf_life_days: 4
   - code: マル-まいたけ
     name: まいたけ
     retail_price: 158
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     shelf_life_days: 5
   - code: マル-エリンギ
     name: エリンギ
     retail_price: 158
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     shelf_life_days: 5
   - code: マル-なめこ100g
     name: なめこ
     retail_price: 108
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 100g
     storage: 要冷
@@ -701,7 +701,7 @@ products:
     name: 中国産ニンニク
     retail_price: 168
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 3個入り
     storage: 常温
@@ -710,7 +710,7 @@ products:
     name: レモン
     retail_price: 138
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     origin: 米国
     storage: 両方
@@ -719,7 +719,7 @@ products:
     name: 甘夏
     retail_price: 238
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 2個 パック
     storage: 要冷
@@ -728,7 +728,7 @@ products:
     name: 大葉しそ
     retail_price: 128
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 10枚 パック
     shelf_life_days: 4
@@ -736,7 +736,7 @@ products:
     name: 温州みかん
     retail_price: 378
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     spec: 5個 パック
     storage: 要冷
@@ -745,7 +745,7 @@ products:
     name: ソルダム
     retail_price: 398
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     spec: パック
     shelf_life_days: 7
@@ -753,14 +753,14 @@ products:
     name: オレンジ2個
     retail_price: 248
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 3
     shelf_life_days: 5
   - code: マル-リンゴパック2個
     name: リンゴ
     retail_price: 598
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     spec: パック 2個
     storage: 要冷
@@ -769,7 +769,7 @@ products:
     name: メロン
     retail_price: 598
     groups:
-    - マルカ系
+    - 高野原店様オーナー
     min_lot: 2
     spec: 4個
     shelf_life_days: 5

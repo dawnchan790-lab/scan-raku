@@ -5,7 +5,7 @@
     python3 tools/import_products.py \\
         "templates/現行/⑥発注書納品書_宗久グループ_0807230.xlsx:宗久グループ" \\
         "templates/現行/⑧発注書納品書_大町2丁目店_080801.xlsx:大町2丁目店（別オーナー）" \\
-        "templates/現行/③発注書納品書_マルカ系_7.21納品.xlsx:マルカ系"
+        "templates/現行/③発注書納品書_高野原店様オーナー_7.21納品.xlsx:高野原店様オーナー"
 
 引数は「ブックのパス:グループ名」。グループ名は config/stores.yaml の
 group（または price_group）と合わせる。

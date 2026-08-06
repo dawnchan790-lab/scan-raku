@@ -5,7 +5,7 @@
 
 現行ブックには2つの書式があり、どちらも自動判別する。
 
-  マルカ系   : 「印刷・FAX　発注書」シート。産地・規格・保存・最小発注ロットあり
+  高野原店様オーナー   : 「印刷・FAX　発注書」シート。産地・規格・保存・最小発注ロットあり
   宗久グループ: 「入力　発注書」シート。品名・賞味期限・売価のみ
 """
 
@@ -64,7 +64,7 @@ def import_products(path: str | Path) -> list[ImportedProduct]:
 
 
 def _import_maruka(sheet) -> list[ImportedProduct]:
-    """マルカ系（産地・規格・保存・最小発注ロットあり）。"""
+    """高野原店様オーナー（産地・規格・保存・最小発注ロットあり）。"""
     products = []
     for row in range(13, 64):
         name = _text(sheet[f"B{row}"].value)

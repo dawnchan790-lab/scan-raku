@@ -59,6 +59,12 @@ stores:
     group: 宗久グループ
     aliases: [立町, ひろせたちまち]
 
+  - code: YAOTOME
+    name: ファミリーマート　八乙女中央店
+    short_name: 八乙女中央
+    group: 宗久グループ
+    aliases: [八乙女, やおとめ]
+
   # ── 別オーナー ────────────────────────────────────
   - code: OMACHI2
     name: ファミリーマート　仙台大町2丁目店
@@ -68,29 +74,14 @@ stores:
     note_name: 大町２丁目店      # 現行の納品書は「様」なしで印字されている
     aliases: [大町2丁目, 大町二丁目, おおまち]
 
-  # ── マルカ系 ──────────────────────────────────────
+  # ── 高野原店様オーナー ────────────────────────────
   - code: TAKANOHARA
     name: ファミリーマート　仙台高野原店
     short_name: 仙台高野原
-    group: マルカ系
+    group: 高野原店様オーナー
     margin_rate: 0.28          # ← 掛け率28%
     order_unit: lot            # ← ロット数で発注する
     delivery_fee:
       enabled: false           # ← この店だけ送料なし
     aliases: [高野原, たかのはら]
 
-  - code: KAMIAYASHI
-    name: ファミリーマート　仙台上愛子店
-    short_name: 仙台上愛子
-    group: マルカ系
-    margin_rate: 0.28
-    order_unit: lot
-    aliases: [上愛子, かみあやし]
-
-  - code: KURYU4
-    name: ファミリーマート　栗生4丁目店
-    short_name: 栗生4丁目
-    group: マルカ系
-    margin_rate: 0.28
-    order_unit: lot
-    aliases: [栗生四丁目, 栗生４丁目, くりゅう]

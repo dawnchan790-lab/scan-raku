@@ -77,7 +77,7 @@ def test_omachi_shares_the_price_list_with_the_munehisa_group(stores, products):
 
 
 def test_maruka_keeps_its_own_price_list(stores, products):
-    """マルカ系は品目も売価も別なので、同じ「バナナ」でも別商品として引く。"""
+    """高野原店様オーナーは品目も売価も別なので、同じ「バナナ」でも別商品として引く。"""
     parser = OrderParser(stores, products)
 
     kunimi = parser.parse("国見ケ丘\n8/7\nバナナ 1", received_at=date(2026, 8, 1))
@@ -88,7 +88,7 @@ def test_maruka_keeps_its_own_price_list(stores, products):
 
 
 def test_lot_store_multiplies_by_the_minimum_lot(stores, products):
-    """マルカ系は「ロット数」で発注する。数量＝ロット数×最小発注ロット。"""
+    """高野原店様オーナーは「ロット数」で発注する。数量＝ロット数×最小発注ロット。"""
     # バナナ（太め1本）の最小発注ロットは4
     assert products.get("マル-バナナ太め1本").min_lot == 4
 

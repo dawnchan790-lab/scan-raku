@@ -35,7 +35,7 @@ def test_same_price_stores_share_one_sheet(stores, products):
 
 
 def test_maruka_gets_its_own_sheet(stores, products):
-    """マルカ系は品目も売価も違うので別の表にする。"""
+    """高野原店様オーナーは品目も売価も違うので別の表にする。"""
     orders = [
         _order("KUNIMIGAOKA", DAY, [("宗久-バナナ", 1)]),
         _order("TAKANOHARA", DAY, [("マル-バナナ太め1本", 1)]),
@@ -43,7 +43,7 @@ def test_maruka_gets_its_own_sheet(stores, products):
 
     groups = {t.group for t in build_picking_tables(DAY, orders, stores, products)}
 
-    assert groups == {"宗久グループ", "マルカ系"}
+    assert groups == {"宗久グループ", "高野原店様オーナー"}
 
 
 def test_quantities_are_laid_out_by_store(stores, products):
