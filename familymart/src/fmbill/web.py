@@ -24,7 +24,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .app import AppContext
-from .billing import build_delivery_note
+from .billing import build_delivery_note, period_containing
 from .models import Order, OrderLine
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -43,7 +43,11 @@ class InputHandler(BaseHTTPRequestHandler):
         query = parse_qs(route.query)
 
         if route.path in ("/", "/index.html"):
+            return self._send_file(STATIC_DIR / "home.html", "text/html; charset=utf-8")
+        if route.path == "/nyuryoku":
             return self._send_file(STATIC_DIR / "nyuryoku.html", "text/html; charset=utf-8")
+        if route.path == "/api/status":
+            return self._send_json(self._status(query.get("date", [""])[0]))
         if route.path == "/api/stores":
             return self._send_json({"stores": self._stores()})
         if route.path == "/api/products":
@@ -85,6 +89,35 @@ class InputHandler(BaseHTTPRequestHandler):
             self._send_json({"error": "not found"}, status=404)
         except Exception as error:  # 画面側で原因が見えるように本文で返す
             self._send_json({"error": str(error)}, status=400)
+
+    def _status(self, day: str) -> dict:
+        """その日の入力の進み具合。ホーム画面で一目で分かるようにする。"""
+        if not day:
+            return {"stores": [], "period": ""}
+        target = _parse_date(day)
+        orders = self.ctx.ledger.orders_on(target)
+
+        entered: dict[str, int] = {}
+        for order in orders:
+            entered[order.store_code] = entered.get(order.store_code, 0) + len(order.lines)
+
+        stores = [
+            {
+                "code": store.code,
+                "name": store.display_name,
+                "group": store.group,
+                "items": entered.get(store.code, 0),
+            }
+            for store in self.ctx.stores
+        ]
+        period = period_containing(target, next(iter(self.ctx.stores)).closing_day)
+        return {
+            "stores": stores,
+            "entered": sum(1 for s in stores if s["items"]),
+            "total_items": sum(s["items"] for s in stores),
+            "period": period.label,
+            "month": f"{period.end:%Y-%m}",
+        }
 
     def _read_fax(self, blob: bytes, filename: str) -> dict:
         """FAXの画像・PDFを行ごとに切り分けて、確認用の画像を返す。
@@ -151,7 +184,7 @@ class InputHandler(BaseHTTPRequestHandler):
         }
 
     def _make_notes(self, delivery_date: date) -> dict:
-        from .billing import build_delivery_note
+        from .billing import build_delivery_note, period_containing
         from .excel import TemplateWriter, delivery_note_payload
 
         orders = self.ctx.ledger.orders_on(delivery_date)

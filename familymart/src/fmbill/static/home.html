@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ファミリーマート 納品・請求システム</title>
+<style>
+  :root { --line:#d8dee6; --bg:#f6f8fa; --accent:#0b7285; --done:#0b7285; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#1b1f23;
+         font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif; }
+  header { background:#0b7285; color:#fff; padding:18px 20px; }
+  header h1 { font-size:19px; margin:0; }
+  header p { font-size:13px; margin:4px 0 0; opacity:.85; }
+  main { padding:20px; max-width:1000px; }
+
+  .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  .step { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px;
+          text-decoration:none; color:inherit; display:block; }
+  .step:hover { border-color:var(--accent); }
+  .step .no { font-size:12px; color:var(--accent); font-weight:700; letter-spacing:.08em; }
+  .step h2 { font-size:16px; margin:6px 0 6px; }
+  .step p { font-size:13px; color:#57606a; margin:0; line-height:1.7; }
+
+  .panel { background:#fff; border:1px solid var(--line); border-radius:10px;
+           padding:16px 18px; margin-top:20px; }
+  .panel h2 { font-size:15px; margin:0 0 10px; }
+  .row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px; }
+  label { display:block; font-size:12px; color:#57606a; margin-bottom:3px; }
+  input[type=date] { font:inherit; padding:7px 9px; border:1px solid var(--line);
+                     border-radius:6px; background:#fff; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:6px 9px; text-align:left; }
+  th { background:#eef2f6; font-size:12px; color:#57606a; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .yes { color:var(--done); font-weight:700; }
+  .no2 { color:#8a94a0; }
+  .summary { font-size:13px; color:#57606a; margin-bottom:10px; line-height:1.8; }
+  .foot { font-size:12px; color:#57606a; margin-top:18px; line-height:1.9; }
+  code { background:#eef2f6; padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ファミリーマート 納品・請求システム</h1>
+  <p>納品数量を入れる → 仕分け表・納品書 → 毎月20日締めで請求書</p>
+</header>
+
+<main>
+  <div class="steps">
+    <a class="step" href="/nyuryoku">
+      <div class="no">STEP 1</div>
+      <h2>数量の入力</h2>
+      <p>売り場の画像を見て決めた数量を入れます。<br>宗久グループ・大町2丁目はこちら。</p>
+    </a>
+    <a class="step" href="/fax">
+      <div class="no">STEP 1</div>
+      <h2>FAXから入れる</h2>
+      <p>FAXの写真やPDFを読み込み、1行ずつ見ながら数量を入れます。<br>高野原店はこちら。</p>
+    </a>
+    <a class="step" href="/shorui">
+      <div class="no">STEP 2</div>
+      <h2>帳票を作る</h2>
+      <p>仕分け表・納品書・請求書を作ります。<br>できたファイルは output フォルダに入ります。</p>
+    </a>
+    <a class="step" href="/kakaku">
+      <div class="no">いつでも</div>
+      <h2>売価の変更</h2>
+      <p>売価を直します。原価は掛け率から自動で計算し直されます。</p>
+    </a>
+  </div>
+
+  <div class="panel">
+    <h2>今日の入力の状況</h2>
+    <div class="row">
+      <div><label for="date">納品日</label><input type="date" id="date"></div>
+    </div>
+    <div class="summary" id="summary">読み込んでいます…</div>
+    <div id="table"></div>
+  </div>
+
+  <div class="foot">
+    このシステムはこのパソコンの中だけで動いています。外からはつながりません。<br>
+    終わるときは、起動したときの黒い画面を閉じてください。<br>
+    入力した数量は <code>data\shiwake.db</code> に入っています。ときどきバックアップしてください。<br>
+    使い方は <code>はじめかた.md</code> をご覧ください。
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function load() {
+  const day = $("date").value;
+  if (!day) return;
+  try {
+    const response = await fetch("/api/status?date=" + day);
+    const data = await response.json();
+
+    $("summary").innerHTML =
+      data.entered
+        ? `<b>${data.entered}店舗</b>ぶん（合計${data.total_items}品目）が入力済みです。` +
+          `　この日は締め期間 <b>${data.period}</b> に入ります。`
+        : `まだ入力がありません。　この日は締め期間 <b>${data.period}</b> に入ります。`;
+
+    const rows = data.stores.map((s) => `<tr>
+        <td>${s.name}</td>
+        <td>${s.group}</td>
+        <td class="num">${s.items ? s.items + " 品目" : ""}</td>
+        <td class="${s.items ? "yes" : "no2"}">${s.items ? "入力済み" : "未入力"}</td>
+      </tr>`).join("");
+    $("table").innerHTML =
+      `<table><thead><tr><th>店舗</th><th>グループ</th><th class="num">数量</th><th>状態</th></tr></thead>
+       <tbody>${rows}</tbody></table>`;
+  } catch (error) {
+    $("summary").textContent = "状況を読み込めませんでした。";
+  }
+}
+
+$("date").addEventListener("change", load);
+$("date").value = new Date().toISOString().slice(0, 10);
+load();
+</script>
+</body>
+</html>
