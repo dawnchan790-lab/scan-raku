@@ -56,6 +56,8 @@ class InputHandler(BaseHTTPRequestHandler):
             return self._send_file(STATIC_DIR / "fax.html", "text/html; charset=utf-8")
         if route.path == "/kakaku":
             return self._send_file(STATIC_DIR / "kakaku.html", "text/html; charset=utf-8")
+        if route.path == "/shorui":
+            return self._send_file(STATIC_DIR / "shorui.html", "text/html; charset=utf-8")
         self._send_json({"error": "not found"}, status=404)
 
     # ----------------------------------------------------------------- POST
@@ -72,6 +74,9 @@ class InputHandler(BaseHTTPRequestHandler):
             if route.path == "/api/prices":
                 body = json.loads(self.rfile.read(length) or b"{}")
                 return self._send_json(self._save_prices(body))
+            if route.path == "/api/documents":
+                body = json.loads(self.rfile.read(length) or b"{}")
+                return self._send_json(self._make_documents(body))
             self._send_json({"error": "not found"}, status=404)
         except Exception as error:  # 画面側で原因が見えるように本文で返す
             self._send_json({"error": str(error)}, status=400)
@@ -111,6 +116,101 @@ class InputHandler(BaseHTTPRequestHandler):
                 }
             )
         return {"pages": pages}
+
+    def _make_documents(self, body: dict) -> dict:
+        """画面のボタンから帳票を作る。コマンドを打たずにテスト運用できるようにする。"""
+        kind = body.get("kind")
+        if kind == "shiwakehyo":
+            return self._make_picking(_parse_date(body["date"]))
+        if kind == "nouhin":
+            return self._make_notes(_parse_date(body["date"]))
+        if kind == "seikyu":
+            return self._make_invoices(body["month"])
+        raise ValueError(f"知らない帳票です: {kind}")
+
+    def _make_picking(self, delivery_date: date) -> dict:
+        from .picking import build_picking_tables, export_picking_sheet
+
+        orders = self.ctx.ledger.orders_on(delivery_date)
+        if not orders:
+            return {"messages": [f"{delivery_date:%Y/%m/%d} の納品数量がありません。"], "files": []}
+
+        tables = build_picking_tables(delivery_date, orders, self.ctx.stores, self.ctx.products)
+        out = self.ctx.output_dir / f"仕分け表_{delivery_date:%Y%m%d}.xlsx"
+        export_picking_sheet(tables, out)
+        return {
+            "messages": [
+                f"{t.group}: {t.item_count}品目 / {len(t.stores)}店舗" for t in tables
+            ],
+            "files": [str(out)],
+        }
+
+    def _make_notes(self, delivery_date: date) -> dict:
+        from .billing import build_delivery_note
+        from .excel import TemplateWriter, delivery_note_payload
+
+        orders = self.ctx.ledger.orders_on(delivery_date)
+        if not orders:
+            return {"messages": [f"{delivery_date:%Y/%m/%d} の納品数量がありません。"], "files": []}
+
+        messages, files = [], []
+        for store_code in sorted({o.store_code for o in orders}):
+            store = self.ctx.stores.get(store_code)
+            if store.delivery_note is None:
+                messages.append(f"{store.display_name}: 納品書の設定がありません。")
+                continue
+            note = build_delivery_note(store, delivery_date, orders, self.ctx.products)
+            header, rows = delivery_note_payload(note)
+            writer = TemplateWriter(
+                self.ctx.resolve(store.delivery_note.template),
+                self.ctx.layouts[store.delivery_note.layout],
+            )
+            out = (
+                self.ctx.output_dir
+                / f"納品書_{delivery_date:%Y%m%d}_{store.display_name}.xlsx"
+            )
+            writer.render(header, rows, out)
+            fee = f" + 送料{note.shipping_fee:,}円" if note.shipping_fee else ""
+            messages.append(
+                f"{store.display_name}: {len(note.lines)}品目 "
+                f"原価{note.cost_total:,}円{fee} = {note.total:,}円"
+            )
+            files.append(str(out))
+        return {"messages": messages, "files": files}
+
+    def _make_invoices(self, month: str) -> dict:
+        from .billing import build_invoice, closing_period
+        from .excel import TemplateWriter, invoice_payload
+
+        year, mon = int(month[:4]), int(month[5:7])
+        closing_day = next(iter(self.ctx.stores)).closing_day if len(self.ctx.stores) else 20
+        period = closing_period(year, mon, closing_day)
+        orders = self.ctx.ledger.orders_between(period.start, period.end)
+        if not orders:
+            return {"messages": [f"{period.label} に納品がありません。"], "files": []}
+
+        messages, files = [], []
+        for store_code in sorted({o.store_code for o in orders}):
+            store = self.ctx.stores.get(store_code)
+            if store.invoice is None:
+                continue
+            invoice = build_invoice(
+                store, period, orders, self.ctx.products,
+                number=f"{period.end:%Y%m}-{store_code}",
+            )
+            header, rows = invoice_payload(invoice)
+            writer = TemplateWriter(
+                self.ctx.resolve(store.invoice.template),
+                self.ctx.layouts[store.invoice.layout],
+            )
+            out = self.ctx.output_dir / f"請求書_{period.end:%Y%m}_{store.display_name}.xlsx"
+            writer.render(header, rows, out)
+            messages.append(
+                f"{store.display_name}: 8%対象{invoice.reduced_total:,}円 + "
+                f"10%対象{invoice.standard_total:,}円 = 税込{invoice.total:,}円"
+            )
+            files.append(str(out))
+        return {"messages": [f"対象期間 {period.label}"] + messages, "files": files}
 
     def _save_prices(self, body: dict) -> dict:
         """売価の変更を商品マスタに書き戻す。原価は掛け率から計算し直される。"""

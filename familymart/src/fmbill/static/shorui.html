@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>帳票を作る</title>
+<style>
+  :root { --line:#d8dee6; --bg:#f6f8fa; --accent:#0b7285; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#1b1f23;
+         font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:12px 16px;
+           display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+  h1 { font-size:16px; margin:0 8px 0 0; }
+  a.link { font-size:13px; color:var(--accent); }
+  main { padding:16px; max-width:820px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px;
+          padding:16px 18px; margin-bottom:14px; }
+  .card h2 { font-size:15px; margin:0 0 4px; }
+  .card p { font-size:13px; color:#57606a; margin:0 0 12px; line-height:1.7; }
+  .row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  label { display:block; font-size:12px; color:#57606a; margin-bottom:3px; }
+  input[type=date], input[type=month] { font:inherit; padding:7px 9px;
+           border:1px solid var(--line); border-radius:6px; background:#fff; }
+  button { font:inherit; font-weight:700; padding:9px 20px; border-radius:8px; border:none;
+           background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { background:#9db4bb; cursor:default; }
+  .result { margin-top:12px; font-size:13px; line-height:1.8; }
+  .result ul { margin:6px 0 0; padding-left:20px; }
+  .result .file { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:#0b7285;
+                  word-break:break-all; }
+  .ng { color:#b42318; }
+  .hint { font-size:12px; color:#57606a; margin-top:14px; line-height:1.8; }
+</style>
+</head>
+<body>
+<header>
+  <h1>帳票を作る</h1>
+  <a class="link" href="/">数量の入力</a>
+  <a class="link" href="/fax">FAXから入れる</a>
+  <a class="link" href="/kakaku">売価の変更</a>
+</header>
+
+<main>
+  <div class="card">
+    <h2>仕分け表（倉庫のピッキング用）</h2>
+    <p>その日の納品ぶんを「商品を縦・店舗を横」に並べた1枚にします。
+       売価が同じグループは1枚にまとまります。</p>
+    <div class="row">
+      <div><label for="pickDate">納品日</label><input type="date" id="pickDate"></div>
+      <button data-kind="shiwakehyo" data-date="pickDate">仕分け表を作る</button>
+    </div>
+    <div class="result" id="r-shiwakehyo"></div>
+  </div>
+
+  <div class="card">
+    <h2>納品書</h2>
+    <p>その日に納品する店舗ぶんをまとめて作ります。現行のマルカ書式のままです。</p>
+    <div class="row">
+      <div><label for="noteDate">納品日</label><input type="date" id="noteDate"></div>
+      <button data-kind="nouhin" data-date="noteDate">納品書を作る</button>
+    </div>
+    <div class="result" id="r-nouhin"></div>
+  </div>
+
+  <div class="card">
+    <h2>請求書（20日締め）</h2>
+    <p>締め年月を選ぶと、前月21日〜当月20日の納品をまとめます。
+       現行の工藤祐作商店の書式のままです。</p>
+    <div class="row">
+      <div><label for="invMonth">締め年月</label><input type="month" id="invMonth"></div>
+      <button data-kind="seikyu" data-month="invMonth">請求書を作る</button>
+    </div>
+    <div class="result" id="r-seikyu"></div>
+  </div>
+
+  <div class="hint">
+    できあがったファイルは <b>familymart\output</b> フォルダに入ります。<br>
+    同じ日・同じ月で作り直すと、前に作ったファイルは上書きされます。
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+document.querySelectorAll("button[data-kind]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const kind = button.dataset.kind;
+    const box = $("r-" + kind);
+    const payload = { kind };
+    if (button.dataset.date) payload.date = $(button.dataset.date).value;
+    if (button.dataset.month) payload.month = $(button.dataset.month).value;
+    if ((button.dataset.date && !payload.date) || (button.dataset.month && !payload.month)) {
+      box.innerHTML = '<span class="ng">日付を選んでください。</span>';
+      return;
+    }
+
+    button.disabled = true;
+    box.textContent = "作成しています…";
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || "作成に失敗しました");
+
+      const lines = (result.messages || []).map((m) => `<li>${m}</li>`).join("");
+      const files = (result.files || [])
+        .map((f) => `<li class="file">${f}</li>`).join("");
+      box.innerHTML =
+        (result.files || []).length
+          ? `<b>${result.files.length}件を作成しました。</b><ul>${lines}</ul>
+             <div style="margin-top:8px">保存先</div><ul>${files}</ul>`
+          : `<ul>${lines}</ul>`;
+    } catch (error) {
+      box.innerHTML = `<span class="ng">${error.message}</span>`;
+    }
+    button.disabled = false;
+  });
+});
+
+(function init() {
+  const today = new Date().toISOString().slice(0, 10);
+  $("pickDate").value = today;
+  $("noteDate").value = today;
+  $("invMonth").value = today.slice(0, 7);
+})();
+</script>
+</body>
+</html>
