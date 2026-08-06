@@ -40,3 +40,6 @@ familymart/data/
 familymart/output/
 # Excelを開いたときの一時ファイル
 ~$*.xlsx
+
+# ローカルのPython環境
+familymart/.venv/
