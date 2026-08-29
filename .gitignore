@@ -43,3 +43,7 @@ familymart/output/
 
 # ローカルのPython環境
 familymart/.venv/
+
+# 更新のときにできる控え
+familymart/更新前の控え/
+familymart/config_新しい版/
