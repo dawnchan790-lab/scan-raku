@@ -1,0 +1,7 @@
+# FAXの読み取り画面だけに必要なもの。
+# 入らなくても、他の画面（数量の入力・帳票を作る・売価の変更）は動きます。
+Pillow>=10.0
+numpy>=1.26
+# PDFのページ画像化には poppler-utils（pdftoppm）も必要です
+#   Mac:     brew install poppler
+#   Windows: https://github.com/oschwartz10612/poppler-windows

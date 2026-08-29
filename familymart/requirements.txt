@@ -1,9 +1,3 @@
+# このシステムを動かすのに必ず必要なもの
 openpyxl>=3.1
 PyYAML>=6.0
-
-# FAX読み取り（開発中）
-Pillow>=10.0
-numpy>=1.26
-# PDFのページ画像化には poppler-utils（pdftoppm）が必要です
-#   Ubuntu/Debian: sudo apt-get install poppler-utils
-#   Windows:       https://github.com/oschwartz10612/poppler-windows

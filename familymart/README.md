@@ -43,7 +43,8 @@ FAXの注文表（高野原のみ）    ┘
 
 ```bash
 cd familymart
-pip install -r requirements.txt
+pip install -r requirements.txt          # 必須
+pip install -r requirements-fax.txt      # FAX読み取りを使う場合のみ
 ```
 
 ### テンプレートの配置

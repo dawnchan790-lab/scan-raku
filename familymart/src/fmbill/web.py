@@ -125,7 +125,13 @@ class InputHandler(BaseHTTPRequestHandler):
         数字の読み取りまでは行わない。切り出した画像を画面に並べ、
         人が目で見て数量を入れる（読み違いによる誤請求を避けるため）。
         """
-        from .faxreader import read_file
+        try:
+            from .faxreader import read_file
+        except ImportError as error:
+            return {
+                "error": "FAXの読み取りに必要な部品が入っていません（" + str(error) + "）。"
+                "ターミナルで次を実行してください: ./.venv/bin/python -m pip install -r requirements-fax.txt"
+            }
 
         suffix = Path(filename).suffix.lower() or ".pdf"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp:
@@ -381,7 +387,21 @@ class InputHandler(BaseHTTPRequestHandler):
 
 def serve(ctx: AppContext, port: int = 8765, open_browser: bool = True) -> None:
     handler = partial(InputHandler, ctx=ctx)
-    server = ThreadingHTTPServer(("127.0.0.1", port), handler)
+
+    # そのポートが他で使われていたら、少しずらして試す
+    server = None
+    for candidate in range(port, port + 10):
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", candidate), handler)
+            port = candidate
+            break
+        except OSError:
+            continue
+    if server is None:
+        print(f"  [エラー] ポート {port}〜{port + 9} がすべて使われています。")
+        print("  すでにこのシステムが動いていないか確認してください。")
+        return
+
     url = f"http://127.0.0.1:{port}/"
 
     print(f"入力画面を開きました: {url}")
