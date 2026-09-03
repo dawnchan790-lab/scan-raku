@@ -345,6 +345,8 @@ PYTHONPATH=src python3 -m pytest tests -q
 familymart/
 ├── 起動.bat / 起動.command  # ダブルクリックで起動
 ├── 更新.bat / 更新.command  # 最新版に更新（データと設定は残す）
+├── 今日の帳票.bat / .command      # 仕分け表＋納品書をまとめて作る
+├── 月末の請求書.bat / .command    # 請求書を全店ぶん作る
 ├── はじめかた.md            # テスト運用の手順
 ├── config/
 │   ├── stores.yaml       # 店舗マスタ（店舗ごとの違いはここで吸収）
@@ -374,6 +376,7 @@ familymart/
 │   │   └── kakaku.html   # 売価の変更
 │   └── cli.py            # コマンド
 ├── tools/
+│   ├── auto.py              # 帳票をまとめて作る（自動実行用）
 │   ├── build_templates.py   # 現行ブック → 帳票テンプレート
 │   └── import_products.py   # 現行の発注書 → 商品マスタ
 ├── docs/

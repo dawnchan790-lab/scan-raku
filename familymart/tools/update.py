@@ -27,6 +27,7 @@ REPLACE = ["src", "templates", "tools", "docs", "samples"]
 COPY_FILES = [
     "requirements.txt", "requirements-fax.txt", "README.md", "はじめかた.md",
     "起動.command", "起動.bat", "更新.command", "更新.bat",
+    "今日の帳票.command", "今日の帳票.bat", "月末の請求書.command", "月末の請求書.bat",
 ]
 
 
@@ -87,7 +88,7 @@ def main() -> int:
                 shutil.rmtree(spare)
             shutil.copytree(new / "config", spare)
 
-    for name in ("起動.command", "更新.command"):
+    for name in ("起動.command", "更新.command", "今日の帳票.command", "月末の請求書.command"):
         path = ROOT / name
         if path.exists():
             path.chmod(0o755)
