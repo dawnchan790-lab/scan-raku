@@ -25,7 +25,8 @@ ZIP_URL = (
 # 入れ替えるもの。data と config は触らない（入力したデータと設定を守るため）
 REPLACE = ["src", "templates", "tools", "docs", "samples"]
 COPY_FILES = [
-    "requirements.txt", "requirements-fax.txt", "README.md", "はじめかた.md",
+    "requirements.txt", "requirements-fax.txt", "README.md",
+    "はじめかた.md", "導入マニュアル.md",
     "起動.command", "起動.bat", "更新.command", "更新.bat",
     "今日の帳票.command", "今日の帳票.bat", "月末の請求書.command", "月末の請求書.bat",
 ]
