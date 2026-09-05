@@ -11,6 +11,7 @@ ZIPの展開は Python の zipfile で行う。OS付属の unzip コマンドは
 from __future__ import annotations
 
 import shutil
+import subprocess
 import tempfile
 import urllib.request
 import zipfile
@@ -32,6 +33,30 @@ COPY_FILES = [
 ]
 
 
+def download(url: str, dest: Path) -> None:
+    """ZIPを取ってくる。
+
+    macOSのpython.org版Pythonは、証明書が入っていない状態で配られるため、
+    そのままだと urllib が CERTIFICATE_VERIFY_FAILED で止まる
+    （付属の「Install Certificates.command」を実行していない場合）。
+    そのときはOS付属の curl に切り替える。curl はシステムの証明書を見るので通る。
+    """
+    try:
+        urllib.request.urlretrieve(url, dest)
+        return
+    except Exception as error:
+        if not shutil.which("curl"):
+            raise
+        print("  （通常の方法が使えなかったので、別の方法で取り直します）")
+        done = subprocess.run(
+            ["curl", "-sSL", "--fail", "-o", str(dest), url],
+            capture_output=True,
+            text=True,
+        )
+        if done.returncode != 0:
+            raise RuntimeError(done.stderr.strip() or str(error))
+
+
 def main() -> int:
     print()
     print("  ファミリーマート 納品・請求システム  更新")
@@ -45,7 +70,7 @@ def main() -> int:
         work = Path(tmp)
         print("  最新版を取ってきています...")
         try:
-            urllib.request.urlretrieve(ZIP_URL, work / "new.zip")
+            download(ZIP_URL, work / "new.zip")
         except Exception as error:
             print(f"  [エラー] 取得できませんでした: {error}")
             print("  インターネットにつながっているか確認してください。")
